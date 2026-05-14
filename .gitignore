@@ -1,0 +1,38 @@
+# Build / dependency artefacts
+node_modules/
+target/
+build/
+dist/
+out/
+*.jar
+*.class
+
+# Local environment
+.env
+.env.*
+!.env.example
+.envrc
+.direnv/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Test / coverage
+coverage/
+.nyc_output/
+*.lcov
+.pytest_cache/
+
+# Reference deployment artefacts (must never be checked in)
+*.aep
+!test-vectors/**/*.aep
+*.key
+*.pem
+!test-vectors/**/*.pem
+!examples/**/*.pem
+!docs/**/*.pem

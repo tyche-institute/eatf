@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.tyche.institute/eatf/aep-v1.schema.json",
+  "title": "EATF Agent Evidence Package manifest (v1)",
+  "description": "Manifest envelope carried inside an AEP under manifest.json. This schema validates the manifest only; signatures, timestamps, and the ZIP envelope are validated separately by the verifier.",
+  "type": "object",
+  "required": [
+    "profile",
+    "issuer",
+    "createdAt",
+    "records",
+    "signatures"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "profile": {
+      "description": "AEP profile URN.",
+      "type": "string",
+      "const": "urn:eatf:spec:aep:1.0"
+    },
+    "issuer": {
+      "description": "Identifier of the operator entity that signed this package.",
+      "type": "object",
+      "required": ["commonName", "fingerprintSha256"],
+      "additionalProperties": false,
+      "properties": {
+        "commonName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "fingerprintSha256": {
+          "description": "Hex-encoded SHA-256 fingerprint of the issuer certificate.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "createdAt": {
+      "description": "ISO 8601 timestamp asserting when the issuer sealed the package. The trusted timestamp under timestamps/manifest.tsr is authoritative; this field is informational.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "records": {
+      "description": "Content-addressed record table. One entry per file under records/.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "digestSha256", "kind"],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^records/[A-Za-z0-9._-]+\\.json$"
+          },
+          "digestSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["action", "output", "observation"]
+          }
+        }
+      }
+    },
+    "attestation": {
+      "description": "Optional reference to the agent attestation record under attestations/.",
+      "type": "object",
+      "required": ["path", "digestSha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^attestations/[A-Za-z0-9._-]+\\.json$"
+        },
+        "digestSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "signatures": {
+      "description": "Side-by-side classical + post-quantum detached signatures over the canonicalised manifest.",
+      "type": "object",
+      "required": ["classical"],
+      "additionalProperties": false,
+      "properties": {
+        "classical": {
+          "type": "object",
+          "required": ["suite", "path"],
+          "additionalProperties": false,
+          "properties": {
+            "suite": {
+              "type": "string",
+              "enum": ["urn:eatf:sig:rsa4096", "urn:eatf:sig:ecdsa-p256"]
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^signatures/manifest\\.sig\\.cms$"
+            }
+          }
+        },
+        "postQuantum": {
+          "type": "object",
+          "required": ["suite", "path"],
+          "additionalProperties": false,
+          "properties": {
+            "suite": {
+              "type": "string",
+              "enum": ["urn:eatf:sig:mldsa-65"]
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^signatures/manifest\\.sig\\.mldsa$"
+            }
+          }
+        }
+      }
+    },
+    "timestamp": {
+      "description": "Optional reference to the RFC 3161 timestamp response under timestamps/.",
+      "type": "object",
+      "required": ["path", "tsaCommonName"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^timestamps/manifest\\.tsr$"
+        },
+        "tsaCommonName": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

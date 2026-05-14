@@ -1,0 +1,29 @@
+{
+  "profile": "urn:eatf:spec:aep:1.0",
+  "issuer": {
+    "commonName": "EXAMPLE Operator Issuer 1",
+    "fingerprintSha256": "0000000000000000000000000000000000000000000000000000000000000001"
+  },
+  "createdAt": "2026-05-14T08:42:11Z",
+  "records": [
+    {
+      "path": "records/0001-action.json",
+      "digestSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "kind": "action"
+    }
+  ],
+  "signatures": {
+    "classical": {
+      "suite": "urn:eatf:sig:rsa4096",
+      "path": "signatures/manifest.sig.cms"
+    },
+    "postQuantum": {
+      "suite": "urn:eatf:sig:mldsa-65",
+      "path": "signatures/manifest.sig.mldsa"
+    }
+  },
+  "timestamp": {
+    "path": "timestamps/manifest.tsr",
+    "tsaCommonName": "EXAMPLE Test TSA"
+  }
+}

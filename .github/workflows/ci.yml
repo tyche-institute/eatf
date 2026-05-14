@@ -1,0 +1,93 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  dco:
+    name: DCO sign-off check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check every PR commit carries Signed-off-by
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          missing=0
+          for sha in $(git rev-list "$base..$head"); do
+            if ! git log -1 --format=%B "$sha" | grep -qE "^Signed-off-by: "; then
+              author="$(git log -1 --format='%an <%ae>' "$sha")"
+              echo "::error::commit $sha by $author is missing a Signed-off-by trailer"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo "DCO check failed: $missing commit(s) missing sign-off."
+            echo "Amend with: git commit --amend -s    or rebase with: git rebase --signoff origin/main"
+            exit 1
+          fi
+          echo "DCO check passed."
+
+  schema-validate:
+    name: JSON Schema validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install ajv-cli
+        run: npm install -g ajv-cli@5 ajv-formats@3
+      - name: Compile and validate AEP v1 manifest schema
+        run: |
+          set -euo pipefail
+          ajv compile --strict=false -c ajv-formats -s schemas/aep-v1.schema.json
+          for vector in test-vectors/valid/*/manifest.json; do
+            echo "validating $vector"
+            ajv validate --strict=false -c ajv-formats \
+              -s schemas/aep-v1.schema.json -d "$vector"
+          done
+          for vector in test-vectors/invalid/*/manifest.json; do
+            echo "validating (schema-shape only) $vector"
+            ajv validate --strict=false -c ajv-formats \
+              -s schemas/aep-v1.schema.json -d "$vector"
+          done
+
+  conformance:
+    name: Test-vector conformance (stub verifier)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run stub eatf-verify in batch mode
+        run: |
+          set -euo pipefail
+          chmod +x cli/eatf-verify/eatf-verify
+          cli/eatf-verify/eatf-verify --batch test-vectors
+
+  hygiene:
+    name: Repository hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for forbidden build artefacts in tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          bad=$(git ls-files | grep -E '(^|/)(node_modules|dist|build|target|__pycache__)(/|$)' || true)
+          if [ -n "$bad" ]; then
+            printf 'Forbidden artefacts checked in:\n%s\n' "$bad"
+            exit 1
+          fi
+          echo "Hygiene check passed."
