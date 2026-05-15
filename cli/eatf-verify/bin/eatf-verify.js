@@ -116,7 +116,10 @@ function findAep(root) {
 }
 
 function expectedFromTreePath(p, conformanceRoot) {
-  const rel = p.slice(conformanceRoot.replace(/\/$/, "").length + 1);
+  const base = conformanceRoot.replace(/\/+$/, "");
+  // findAep may produce paths with extra slashes when the root ends in /;
+  // strip any leading slashes from the relative portion before matching.
+  const rel = p.slice(base.length).replace(/^\/+/, "");
   if (rel.startsWith("valid/")) return "true";
   if (rel.startsWith("invalid/")) return "false";
   return null;
