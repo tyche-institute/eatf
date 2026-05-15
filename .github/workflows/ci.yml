@@ -53,15 +53,20 @@ jobs:
       - name: Compile and validate AEP v1 manifest schema
         run: |
           set -euo pipefail
-          ajv compile --strict=false -c ajv-formats -s schemas/aep-v1.schema.json
+          # --spec=draft2020 is required because schemas/aep-v1.schema.json
+          # declares $schema = https://json-schema.org/draft/2020-12/schema.
+          # ajv-cli defaults to draft-07 and refuses to load the metaschema
+          # without this flag.
+          ajv compile --strict=false --spec=draft2020 -c ajv-formats \
+            -s schemas/aep-v1.schema.json
           for vector in test-vectors/valid/*/manifest.json; do
             echo "validating $vector"
-            ajv validate --strict=false -c ajv-formats \
+            ajv validate --strict=false --spec=draft2020 -c ajv-formats \
               -s schemas/aep-v1.schema.json -d "$vector"
           done
           for vector in test-vectors/invalid/*/manifest.json; do
             echo "validating (schema-shape only) $vector"
-            ajv validate --strict=false -c ajv-formats \
+            ajv validate --strict=false --spec=draft2020 -c ajv-formats \
               -s schemas/aep-v1.schema.json -d "$vector"
           done
 
