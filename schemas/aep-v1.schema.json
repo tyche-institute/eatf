@@ -5,22 +5,18 @@
   "description": "Validates the metadata.json entry inside an AEP v1 evidence package. Wire format documented in docs/aep-profile.md. The signature, timestamp, and OVERT receipt are validated by the verifier separately; this schema only constrains metadata.json.",
   "type": "object",
   "required": [
-    "schema",
-    "attestation_id",
-    "agent_id",
-    "action_type",
-    "policy_id",
-    "policy_version",
-    "policy_decision",
-    "created_at",
-    "format_version"
+    "created_at"
   ],
   "additionalProperties": true,
   "properties": {
     "schema": {
-      "description": "Schema identifier URN.",
+      "description": "Schema identifier URN. Optional in v0.1 for backwards compatibility with sparse early metadata payloads; when present MUST equal 'urn:eatf:spec:aep:metadata:1.0'.",
       "type": "string",
       "const": "urn:eatf:spec:aep:metadata:1.0"
+    },
+    "response_id": {
+      "description": "Optional producer-side identifier (legacy / sparse format).",
+      "type": ["string", "integer", "number"]
     },
     "attestation_id": {
       "description": "Globally unique identifier for this attestation. Producers are encouraged to use a ULID, UUIDv7, or another monotonically-sortable scheme.",
