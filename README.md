@@ -89,6 +89,13 @@ format specification.
 - [Glossary](./docs/glossary.md) — IMPLEMENTED / ALIGNED / REFERENCED
   / ADDRESSED labels, AEP / VC / TSA terminology.
 
+## Roadmap
+
+See [ROADMAP.md](./ROADMAP.md) for what's planned (signer + sign
+CLI, more failure-mode test vectors, GitHub Action, Python and Go
+verifiers) and what's explicitly out of scope (backend, frontend,
+managed-service client SDKs).
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md). This project uses the
