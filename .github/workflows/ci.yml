@@ -50,7 +50,7 @@ jobs:
           node-version: "20"
       - name: Install ajv-cli
         run: npm install -g ajv-cli@5 ajv-formats@3
-      - name: Compile and validate AEP v1 manifest schema
+      - name: Compile schema (sanity check; draft-2020-12)
         run: |
           set -euo pipefail
           # --spec=draft2020 is required because schemas/aep-v1.schema.json
@@ -59,27 +59,45 @@ jobs:
           # without this flag.
           ajv compile --strict=false --spec=draft2020 -c ajv-formats \
             -s schemas/aep-v1.schema.json
-          for vector in test-vectors/valid/*/manifest.json; do
-            echo "validating $vector"
-            ajv validate --strict=false --spec=draft2020 -c ajv-formats \
-              -s schemas/aep-v1.schema.json -d "$vector"
-          done
-          for vector in test-vectors/invalid/*/manifest.json; do
-            echo "validating (schema-shape only) $vector"
-            ajv validate --strict=false --spec=draft2020 -c ajv-formats \
-              -s schemas/aep-v1.schema.json -d "$vector"
-          done
 
-  conformance:
-    name: Test-vector conformance (stub verifier)
+  verifier-test:
+    name: Verifier unit tests + build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run stub eatf-verify in batch mode
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        working-directory: lib
+        run: npm install --no-audit --no-fund
+      - name: Build (tsc)
+        working-directory: lib
+        run: npm run build
+      - name: Run vitest
+        working-directory: lib
+        run: npx vitest run
+
+  conformance:
+    name: Test-vector conformance (real verifier)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build the verifier
+        working-directory: lib
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Wire up the CLI
+        working-directory: cli/eatf-verify
+        run: npm install --no-audit --no-fund
+      - name: Run eatf-verify --conformance against test-vectors/
         run: |
           set -euo pipefail
-          chmod +x cli/eatf-verify/eatf-verify
-          cli/eatf-verify/eatf-verify --batch test-vectors
+          node cli/eatf-verify/bin/eatf-verify.js --conformance test-vectors/
 
   hygiene:
     name: Repository hygiene

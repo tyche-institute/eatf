@@ -45,20 +45,32 @@ Apache License 2.0. See [LICENSE](./LICENSE).
 
 ## Quick start
 
-Minimal sign-and-verify example (`examples/01-minimal-sign-and-verify/`):
+Verify a sample evidence package using the bundled conformance vectors:
 
 ```bash
-# Sign an action record into an .aep evidence package
-eatf-sign --in action.json --key tests/keys/dev.pem --out action.aep
+git clone https://github.com/tyche-institute/eatf
+cd eatf
 
-# Verify the package offline (no network calls, no API keys)
-eatf-verify action.aep
-# → verify=true (signature, hash chain, RFC 3161 timestamp all valid)
+# Build the verifier
+(cd lib && npm install && npm run build)
+# Wire up the CLI
+(cd cli/eatf-verify && npm install)
+
+# Run conformance against the bundled vectors
+node cli/eatf-verify/bin/eatf-verify.js --conformance test-vectors/
+# → PASS  package.aep  expected=true   actual=true
+# → PASS  package.aep  expected=true   actual=true
+# → PASS  package.aep  expected=true   actual=true
+# → PASS  package.aep  expected=false  actual=false
+# → Conformance: 3 verified, 1 rejected, 0 contract mismatches.
+
+# Verify your own .aep
+node cli/eatf-verify/bin/eatf-verify.js path/to/your.aep
 ```
 
-See [`examples/`](./examples/) for full, runnable examples and
-[`docs/aep-profile.md`](./docs/aep-profile.md) for the AEP format
-specification.
+The signer that produces `.aep` files lands in a 0.1.x point release.
+See [`docs/aep-profile.md`](./docs/aep-profile.md) for the wire
+format specification.
 
 ## Documentation
 
@@ -117,10 +129,20 @@ implementations for verifiable AI agent attestation infrastructure.
 
 ## Status
 
-This is the **v0.1 initial public release** of the specification and
-the reference-implementation scaffolding. The cryptographic
-primitives, signer, verifier, and AEP packaging layer are documented
-here in spec form; the working implementation lives in
-[`lib/`](./lib/) and [`cli/`](./cli/) and is being ported from the
-internal research codebase. See the [CHANGELOG](./CHANGELOG.md) for
-the per-release contents.
+**v0.1.1** ships the first runnable offline verifier:
+
+- [`lib/`](./lib/) — `@eatf/verifier` 0.1.1 TypeScript implementation
+  of the eight-check verification pipeline (envelope, canonicalisation,
+  hash chain, RSA / ECDSA, ML-DSA-65, issuer chain, RFC 3161 timestamp,
+  attestation). Runs in Node 20+ and in the browser.
+- [`cli/eatf-verify/`](./cli/eatf-verify/) — `@eatf/verify-cli` 0.1.1,
+  offline command-line wrapper.
+- [`test-vectors/`](./test-vectors/) — four conformance vectors with
+  real `.aep` files (3 valid + 1 invalid).
+
+The signer, AEP packaging tooling, and additional CLI commands
+(`eatf-sign`, `eatf-inspect`) land in successive 0.1.x point
+releases. See the [CHANGELOG](./CHANGELOG.md) for per-release
+contents and [`test-vectors/README.md`](./test-vectors/README.md) for
+the conformance contract any independent implementation can verify
+against.

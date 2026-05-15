@@ -7,13 +7,10 @@ Each vector is a self-contained subdirectory:
 ```
 <vector-name>/
 ├── package.aep
-├── expected-verify.json     # the VerificationReport a verifier should produce
-├── anchors/
-│   ├── issuer-root.pem
-│   └── tsa-root.pem
-└── README.md                # what this vector exercises
+├── verify-expected.txt     # verify=true
+└── README.md
 ```
 
-## v0.1.0 status
-
-Stub. Vectors land in successive 0.1.x point releases.
+See [`../README.md`](../README.md) for the conformance contract and
+[`../../cli/eatf-verify/README.md`](../../cli/eatf-verify/README.md)
+for how to run the reference verifier.

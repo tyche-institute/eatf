@@ -1,25 +1,102 @@
-# lib/ — EATF reference implementation
+# `@eatf/verifier` — offline TypeScript verifier for EATF Agent Evidence Packages
 
-This directory will hold the reference implementation of the EATF
-cryptographic and packaging stack. Each subdirectory corresponds to
-one of the layers documented in [`../docs/architecture.md`](../docs/architecture.md).
+Reference TypeScript implementation of the EATF offline verifier.
+Runs in Node 20+ and in modern browsers via Web Crypto.
 
-| Subdirectory       | Layer | Responsibility                                                                            |
-|--------------------|-------|-------------------------------------------------------------------------------------------|
-| `canonicalization/`| 2     | RFC 8785 JCS for JSON; deterministic ZIP layout for the AEP envelope.                     |
-| `signer/`          | 3     | Hybrid signing: RSA-4096 (or ECDSA-P256) + ML-DSA-65 detached CMS signatures.             |
-| `timestamping/`    | 4     | RFC 3161 client for binding manifest signatures to a trusted-third-party timestamp.       |
-| `package/`         | 5     | AEP ZIP envelope construction, content-addressed hashing, attestation embedding.          |
-| `verifier/`        | 6     | Offline verifier: signature, hash chain, timestamp, trust-anchor validation.              |
+## What it does
 
-## v0.1.0 status
+Given an `.aep` evidence package, the verifier asserts:
 
-The v0.1.0 release ships the directory layout and per-subdirectory
-README placeholders documenting the intended responsibility of each
-module. The runnable implementation is being ported from the internal
-research codebase and will land in successive 0.1.x point releases,
-each with conformance test vectors under `../test-vectors/`.
+1. **Envelope integrity** — well-formed ZIP with expected entries
+   (manifest, records, attestations, signatures, timestamp, certs).
+2. **Manifest canonicalisation** — re-canonicalises the manifest under
+   RFC 8785 JCS and asserts byte-for-byte equality with the signed copy.
+3. **Hash chain** — every record's SHA-256 matches the manifest's
+   declared digest.
+4. **Classical signature** — RSA-4096 (or ECDSA-P256) detached CMS
+   signature against the issuer certificate.
+5. **Post-quantum signature** — ML-DSA-65 (FIPS 204) when present.
+6. **Issuer chain** — issuer certificate up to a configured trust
+   anchor (RFC 5280).
+7. **Timestamp** — RFC 3161 `TimeStampResp` against the TSA trust
+   anchor; covers the manifest signature.
+8. **Attestation** — W3C VC validation when `agent.vc.json` is present.
 
-Pinning to v0.1.0 today gives integrators a stable reference for the
-project's positioning, license, and governance even before the
-reference code lands.
+No network access required. Trust anchors are passed in by the caller.
+
+## Modules
+
+| File                  | Responsibility                                                                                |
+|-----------------------|-----------------------------------------------------------------------------------------------|
+| `src/canonical.ts`    | RFC 8785 JCS canonicalisation.                                                                |
+| `src/hash.ts`         | SHA-256 wrapper around Web Crypto / Node `crypto`.                                            |
+| `src/rsa.ts`          | RSA-PSS / PKCS#1 v1.5 signature verification, CMS parsing.                                    |
+| `src/mldsa.ts`        | ML-DSA-65 (NIST FIPS 204) signature verification via `@noble/post-quantum`.                   |
+| `src/tsa.ts`          | RFC 3161 `TimeStampResp` parser and verifier.                                                 |
+| `src/tsa-trust-list.ts` | TSA trust-anchor list management.                                                            |
+| `src/overt.ts`        | OVERT 1.0 receipt validation.                                                                 |
+| `src/verifier.ts`     | Orchestrates the eight checks above and returns a structured `VerifyResult`.                  |
+| `src/index.ts`        | Node entry point (uses Node `crypto` and filesystem).                                         |
+| `src/browser.ts`      | Browser entry point (Web Crypto only; package input via `ArrayBuffer`).                       |
+
+## Install
+
+The package will be published to npm once the API stabilises. For now,
+consume it from a clone of the repository:
+
+```bash
+git clone https://github.com/tyche-institute/eatf
+cd eatf/lib
+npm install
+npm run build
+```
+
+## Usage
+
+### Node
+
+```ts
+import { verify } from "@eatf/verifier";
+import { readFile } from "node:fs/promises";
+
+const bytes = await readFile("./action.aep");
+const result = await verify(bytes, { tsaTrustList: [] });
+
+console.log(result.valid, result.failureReason);
+```
+
+### Browser
+
+```ts
+import { verify } from "@eatf/verifier/browser";
+
+const file = inputElement.files[0];
+const bytes = new Uint8Array(await file.arrayBuffer());
+
+const result = await verify(bytes, { tsaTrustList: [/* PEM strings */] });
+```
+
+## Cryptographic suites supported
+
+- **Classical:** RSA-4096 (default), ECDSA-P256.
+- **Post-quantum:** ML-DSA-65 (NIST FIPS 204).
+- **Hash:** SHA-256.
+- **Canonicalisation:** RFC 8785 JCS for JSON; deterministic ZIP
+  layout for the envelope.
+
+## Tests
+
+```bash
+npm test
+```
+
+Runs the vitest suite under `test/`:
+
+- RFC 8785 JCS canonicalisation conformance.
+- RFC 3161 `TimeStampResp` parsing.
+- TSA trust-list construction.
+- OVERT 1.0 fixture validation against `../test-vectors/`.
+
+## License
+
+Apache License 2.0 — see [`../LICENSE`](../LICENSE).
