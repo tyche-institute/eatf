@@ -59,6 +59,17 @@ jobs:
           # without this flag.
           ajv compile --strict=false --spec=draft2020 -c ajv-formats \
             -s schemas/aep-v1.schema.json
+      - name: Validate metadata.json from every conformance vector
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/aep-meta
+          for vector in test-vectors/valid/*/package.aep test-vectors/invalid/*/package.aep; do
+            name=$(basename "$(dirname "$vector")")
+            unzip -p "$vector" metadata.json > "/tmp/aep-meta/${name}.json"
+            echo "validating $vector → /tmp/aep-meta/${name}.json"
+            ajv validate --strict=false --spec=draft2020 -c ajv-formats \
+              -s schemas/aep-v1.schema.json -d "/tmp/aep-meta/${name}.json"
+          done
 
   verifier-test:
     name: Verifier unit tests + build

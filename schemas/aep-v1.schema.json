@@ -1,138 +1,93 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.tyche.institute/eatf/aep-v1.schema.json",
-  "title": "EATF Agent Evidence Package manifest (v1)",
-  "description": "Manifest envelope carried inside an AEP under manifest.json. This schema validates the manifest only; signatures, timestamps, and the ZIP envelope are validated separately by the verifier.",
+  "title": "EATF AEP v1 metadata.json",
+  "description": "Validates the metadata.json entry inside an AEP v1 evidence package. Wire format documented in docs/aep-profile.md. The signature, timestamp, and OVERT receipt are validated by the verifier separately; this schema only constrains metadata.json.",
   "type": "object",
   "required": [
-    "profile",
-    "issuer",
-    "createdAt",
-    "records",
-    "signatures"
+    "schema",
+    "attestation_id",
+    "agent_id",
+    "action_type",
+    "policy_id",
+    "policy_version",
+    "policy_decision",
+    "created_at",
+    "format_version"
   ],
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
-    "profile": {
-      "description": "AEP profile URN.",
+    "schema": {
+      "description": "Schema identifier URN.",
       "type": "string",
-      "const": "urn:eatf:spec:aep:1.0"
+      "const": "urn:eatf:spec:aep:metadata:1.0"
     },
-    "issuer": {
-      "description": "Identifier of the operator entity that signed this package.",
-      "type": "object",
-      "required": ["commonName", "fingerprintSha256"],
-      "additionalProperties": false,
-      "properties": {
-        "commonName": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 256
-        },
-        "fingerprintSha256": {
-          "description": "Hex-encoded SHA-256 fingerprint of the issuer certificate.",
-          "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
-        }
-      }
+    "attestation_id": {
+      "description": "Globally unique identifier for this attestation. Producers are encouraged to use a ULID, UUIDv7, or another monotonically-sortable scheme.",
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 256
     },
-    "createdAt": {
-      "description": "ISO 8601 timestamp asserting when the issuer sealed the package. The trusted timestamp under timestamps/manifest.tsr is authoritative; this field is informational.",
+    "tenant_id_hash": {
+      "description": "SHA-256 hex of the deployment-local tenant identifier; or all-zeros for fixtures. Optional.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "agent_id": {
+      "description": "URN identifier of the agent producing the attestation. Conventional form: urn:eatf:tenant:<tenant>:agent:<slug>.",
+      "type": "string",
+      "minLength": 1
+    },
+    "action_type": {
+      "description": "Free-form classifier of the action being attested, e.g. 'mcp.tools/call:github.create_issue' or 'foundational:llm-response'.",
+      "type": "string",
+      "minLength": 1
+    },
+    "model": {
+      "description": "Identifier of the model that produced the underlying response (when applicable).",
+      "type": "string"
+    },
+    "policy_id": {
+      "description": "Identifier of the policy under which the action was evaluated.",
+      "type": "string"
+    },
+    "policy_version": {
+      "description": "Version string of the policy.",
+      "type": "string"
+    },
+    "policy_coverage": {
+      "description": "Fraction of policy rules that successfully evaluated (1.0 means full coverage).",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "policy_decision": {
+      "description": "Policy outcome for the recorded action.",
+      "type": "string",
+      "enum": ["allow", "deny", "warn", "abstain"]
+    },
+    "created_at": {
+      "description": "ISO 8601 timestamp asserting when the producer sealed the package. The trusted timestamp in timestamp.tsr is authoritative; this field is informational.",
       "type": "string",
       "format": "date-time"
     },
-    "records": {
-      "description": "Content-addressed record table. One entry per file under records/.",
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "object",
-        "required": ["path", "digestSha256", "kind"],
-        "additionalProperties": false,
-        "properties": {
-          "path": {
-            "type": "string",
-            "pattern": "^records/[A-Za-z0-9._-]+\\.json$"
-          },
-          "digestSha256": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
-          },
-          "kind": {
-            "type": "string",
-            "enum": ["action", "output", "observation"]
-          }
-        }
-      }
+    "privacy_mode": {
+      "description": "Whether the underlying response is included verbatim (false) or only its hash (true).",
+      "type": "boolean"
     },
-    "attestation": {
-      "description": "Optional reference to the agent attestation record under attestations/.",
-      "type": "object",
-      "required": ["path", "digestSha256"],
-      "additionalProperties": false,
-      "properties": {
-        "path": {
-          "type": "string",
-          "pattern": "^attestations/[A-Za-z0-9._-]+\\.json$"
-        },
-        "digestSha256": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
-        }
-      }
+    "format_version": {
+      "description": "Optional embedded format version identifier (e.g. 'ATAP-1.0').",
+      "type": "string"
     },
-    "signatures": {
-      "description": "Side-by-side classical + post-quantum detached signatures over the canonicalised manifest.",
+    "mcp": {
+      "description": "Optional MCP-specific block for tools/call attestations.",
       "type": "object",
-      "required": ["classical"],
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
-        "classical": {
-          "type": "object",
-          "required": ["suite", "path"],
-          "additionalProperties": false,
-          "properties": {
-            "suite": {
-              "type": "string",
-              "enum": ["urn:eatf:sig:rsa4096", "urn:eatf:sig:ecdsa-p256"]
-            },
-            "path": {
-              "type": "string",
-              "pattern": "^signatures/manifest\\.sig\\.cms$"
-            }
-          }
-        },
-        "postQuantum": {
-          "type": "object",
-          "required": ["suite", "path"],
-          "additionalProperties": false,
-          "properties": {
-            "suite": {
-              "type": "string",
-              "enum": ["urn:eatf:sig:mldsa-65"]
-            },
-            "path": {
-              "type": "string",
-              "pattern": "^signatures/manifest\\.sig\\.mldsa$"
-            }
-          }
-        }
-      }
-    },
-    "timestamp": {
-      "description": "Optional reference to the RFC 3161 timestamp response under timestamps/.",
-      "type": "object",
-      "required": ["path", "tsaCommonName"],
-      "additionalProperties": false,
-      "properties": {
-        "path": {
-          "type": "string",
-          "pattern": "^timestamps/manifest\\.tsr$"
-        },
-        "tsaCommonName": {
-          "type": "string",
-          "minLength": 1
-        }
+        "tool_name": { "type": "string" },
+        "method": { "type": "string" },
+        "gateway_mode": { "type": "string", "enum": ["server", "client", "proxy"] },
+        "request_id": { "type": "string" }
       }
     }
   }

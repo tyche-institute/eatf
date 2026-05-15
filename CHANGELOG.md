@@ -13,6 +13,37 @@ library major.
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-05-15
+
+Aligns the v0.1 wire-format documentation and schemas with the
+actual AEP layout used by the runnable verifier.
+
+### Added
+- **`cli/eatf-inspect/`** — `@eatf/inspect-cli` 0.1.2: pretty-prints
+  the structure of an `.aep` package (envelope entries, parsed
+  `metadata.json`, parsed `overt_receipt.json`) without verifying
+  authenticity. Useful for debugging packaging bugs and inspecting
+  received packages before invoking `eatf-verify`. Implemented as a
+  thin wrapper around `fflate`.
+- **CI** — `schema-validate` job now extracts `metadata.json` from
+  every `test-vectors/*/*/package.aep` via `unzip -p` and validates
+  it against `schemas/aep-v1.schema.json`. This catches metadata
+  drift between the schema and the runtime format.
+
+### Changed
+- **`docs/aep-profile.md`** — full v0.1 wire-format specification.
+  Replaces the v0.1.0 stub. Documents the eight ZIP entries
+  (`canonical.bin`, `hash.sha256`, `metadata.json`,
+  `overt_receipt.json`, `public_key.pem`, `response.txt`,
+  `signature.sig`, `timestamp.tsr`), the three signature suites
+  (`urn:eatf:sig:rsa4096`, `urn:eatf:sig:ecdsa-p256`,
+  `urn:eatf:sig:mldsa-65`), and the seven-step verification pipeline.
+- **`schemas/aep-v1.schema.json`** — rewritten to describe
+  `metadata.json` (the actual content of the AEP that v0.1
+  attestations carry), replacing the aspirational manifest schema
+  shipped in v0.1.0. The schema now validates against every real
+  test-vector metadata file in CI.
+
 ## [0.1.1] — 2026-05-15
 
 First release with a runnable offline verifier.
@@ -91,6 +122,7 @@ This 0.1.0 release deliberately shipped specifications and
 scaffolding before runnable code. v0.1.1 replaces the lib/ and
 cli/eatf-verify/ scaffolding with the real implementation.
 
-[Unreleased]: https://github.com/tyche-institute/eatf/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/tyche-institute/eatf/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.2
 [0.1.1]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.1
 [0.1.0]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.0
