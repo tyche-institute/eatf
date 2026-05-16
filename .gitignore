@@ -34,5 +34,6 @@ coverage/
 *.key
 *.pem
 !test-vectors/**/*.pem
+!test-vectors/**/*.key
 !examples/**/*.pem
 !docs/**/*.pem
