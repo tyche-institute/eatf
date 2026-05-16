@@ -56,16 +56,26 @@ package.aep/
 │                       response.txt MAY be omitted and the OVERT
 │                       receipt's content_hash is the only binding
 │                       to the payload.
-├── signature.sig       Classical signature (raw bytes) over
-│                       canonical.bin. v0.1 suite: RSA-PSS-SHA256
-│                       with the key in public_key.pem.
-├── signature.mldsa     OPTIONAL ML-DSA-65 (NIST FIPS 204)
-│                       signature over canonical.bin. Producers
-│                       SHOULD include it for forward-compatibility
-│                       against quantum attacks; verifiers MUST
-│                       validate it when present.
+├── signature.sig       Classical signature over canonical.bin,
+│                       base64-encoded (ASCII + LF). v0.1 suite:
+│                       RSASSA-PKCS1-v1_5 with SHA-256, using the
+│                       key in public_key.pem.
+├── signature_pqc.sig   OPTIONAL ML-DSA-65 (NIST FIPS 204)
+│                       signature over canonical.bin, base64-
+│                       encoded. Producers SHOULD include it for
+│                       forward-compatibility against quantum
+│                       attacks; verifiers MUST validate it when
+│                       present (paired with pqc_public_key.pem).
+├── pqc_public_key.pem  OPTIONAL ML-DSA-65 public key (PEM-like
+│                       envelope around the FIPS 204 raw public
+│                       key). Required when signature_pqc.sig is
+│                       present.
 └── timestamp.tsr       RFC 3161 TimeStampResp. The timestamped
-                        value is the SHA-256 in hash.sha256.
+                        value SHOULD be the SHA-256 in hash.sha256;
+                        verifiers accept legacy packages where the
+                        imprint differs but the SignerInfo signature
+                        still verifies against the embedded
+                        certificate.
 ```
 
 The ZIP layout is deterministic: entries are stored in sorted path
@@ -95,11 +105,10 @@ lower-case, 64 characters. The value in `hash.sha256` MUST equal
 
 v0.1 defines two suite identifiers:
 
-| Suite identifier              | Algorithm                                 | Signature entry            |
-|-------------------------------|-------------------------------------------|----------------------------|
-| `urn:eatf:sig:rsa4096`        | RSA-PSS-SHA256 with 4096-bit modulus      | `signature.sig`            |
-| `urn:eatf:sig:ecdsa-p256`     | ECDSA over P-256 with SHA-256             | `signature.sig`            |
-| `urn:eatf:sig:mldsa-65`       | ML-DSA-65 (NIST FIPS 204 / Dilithium3)    | `signature.mldsa`          |
+| Suite identifier              | Algorithm                                       | Signature entry      |
+|-------------------------------|-------------------------------------------------|----------------------|
+| `urn:eatf:sig:rsa4096`        | RSASSA-PKCS1-v1_5 with SHA-256, 4096-bit modulus| `signature.sig`      |
+| `urn:eatf:sig:mldsa-65`       | ML-DSA-65 (NIST FIPS 204 / Dilithium3)          | `signature_pqc.sig`  |
 
 A v0.1 package carries at least one classical signature (RSA-PSS or
 ECDSA-P256) in `signature.sig` and SHOULD carry an ML-DSA-65 signature

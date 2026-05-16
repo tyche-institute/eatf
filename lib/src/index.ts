@@ -68,6 +68,7 @@ export type VerifyOptions = {
 };
 
 export { verify } from "./verifier.js";
+export { sign, type SignerInput, type SignerOutput } from "./signer.js";
 export type { CanonicalPair } from "./canonical.js";
 export {
   DEFAULT_TSA_TRUST_LIST,

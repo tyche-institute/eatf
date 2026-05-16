@@ -45,32 +45,58 @@ Apache License 2.0. See [LICENSE](./LICENSE).
 
 ## Quick start
 
-Verify a sample evidence package using the bundled conformance vectors:
+End-to-end round-trip using the bundled conformance vectors and dev
+key:
 
 ```bash
 git clone https://github.com/tyche-institute/eatf
 cd eatf
 
-# Build the verifier
+# Build the verifier (which now also exports the signer).
 (cd lib && npm install && npm run build)
-# Wire up the CLI
+# Wire up the CLIs.
 (cd cli/eatf-verify && npm install)
+(cd cli/eatf-sign && npm install)
 
-# Run conformance against the bundled vectors
+# Run conformance against the bundled vectors.
 node cli/eatf-verify/bin/eatf-verify.js --conformance test-vectors/
-# → PASS  package.aep  expected=true   actual=true
-# → PASS  package.aep  expected=true   actual=true
-# → PASS  package.aep  expected=true   actual=true
-# → PASS  package.aep  expected=false  actual=false
-# → Conformance: 3 verified, 1 rejected, 0 contract mismatches.
+# → PASS … expected=true   actual=true   (×4)
+# → PASS … expected=false  actual=false  (×1)
+# → Conformance: 4 verified, 1 rejected, 0 contract mismatches.
 
-# Verify your own .aep
-node cli/eatf-verify/bin/eatf-verify.js path/to/your.aep
+# Sign your own payload with the dev key.
+echo "Hello, world." > /tmp/payload.txt
+cat > /tmp/meta.json <<'JSON'
+{
+  "schema": "urn:eatf:spec:aep:metadata:1.0",
+  "attestation_id": "att_demo_01",
+  "created_at": "2026-05-15T00:00:00Z",
+  "agent_id": "urn:eatf:tenant:demo:agent:hello",
+  "action_type": "demo.hello-world",
+  "policy_id": "atap-basic",
+  "policy_version": "1.0",
+  "policy_coverage": 1.0,
+  "policy_decision": "allow",
+  "format_version": "ATAP-1.0"
+}
+JSON
+node cli/eatf-sign/bin/eatf-sign.js \
+  --payload /tmp/payload.txt \
+  --key test-vectors/keys/dev-rsa-4096.key \
+  --public-key test-vectors/keys/dev-rsa-4096.pem \
+  --metadata /tmp/meta.json \
+  --scope foundational:aep-response \
+  --timestamp test-vectors/valid/valid-overt-profile/package.aep:timestamp.tsr \
+  --out /tmp/hello.aep
+
+# Verify what we just signed.
+node cli/eatf-verify/bin/eatf-verify.js /tmp/hello.aep
+# → verify=true
 ```
 
-The signer that produces `.aep` files lands in a 0.1.x point release.
 See [`docs/aep-profile.md`](./docs/aep-profile.md) for the wire
-format specification.
+format specification and [`cli/eatf-sign/README.md`](./cli/eatf-sign/README.md)
+for how to mint a fresh RFC 3161 timestamp from a public TSA.
 
 ## Documentation
 
@@ -136,20 +162,28 @@ implementations for verifiable AI agent attestation infrastructure.
 
 ## Status
 
-**v0.1.1** ships the first runnable offline verifier:
+**v0.1.3** ships an end-to-end round-trip — sign locally, verify
+locally, no network:
 
-- [`lib/`](./lib/) — `@eatf/verifier` 0.1.1 TypeScript implementation
-  of the eight-check verification pipeline (envelope, canonicalisation,
-  hash chain, RSA / ECDSA, ML-DSA-65, issuer chain, RFC 3161 timestamp,
-  attestation). Runs in Node 20+ and in the browser.
-- [`cli/eatf-verify/`](./cli/eatf-verify/) — `@eatf/verify-cli` 0.1.1,
-  offline command-line wrapper.
-- [`test-vectors/`](./test-vectors/) — four conformance vectors with
-  real `.aep` files (3 valid + 1 invalid).
+- [`lib/`](./lib/) — `@eatf/verifier` 0.1.3, exporting both
+  `verify()` and `sign()`. TypeScript implementation of the
+  verification pipeline (envelope, canonicalisation, hash chain,
+  RSA, ML-DSA-65, issuer chain, RFC 3161 timestamp, attestation)
+  plus the matching signer. Runs in Node 20+ and in the browser.
+- [`cli/eatf-verify/`](./cli/eatf-verify/) — `@eatf/verify-cli`
+  offline verifier CLI.
+- [`cli/eatf-sign/`](./cli/eatf-sign/) — `@eatf/sign-cli` 0.1.3,
+  offline signer CLI (no network; RFC 3161 token supplied as a
+  file).
+- [`cli/eatf-inspect/`](./cli/eatf-inspect/) — `@eatf/inspect-cli`,
+  structural dump.
+- [`test-vectors/`](./test-vectors/) — five conformance vectors
+  with real `.aep` files (4 valid + 1 invalid), including
+  `valid/minimal-roundtrip/` produced by the bundled signer.
+- [`test-vectors/keys/`](./test-vectors/keys/) — public dev RSA
+  keypair (private key intentionally in repo so anyone can
+  regenerate the round-trip vector and confirm byte-equality).
 
-The signer, AEP packaging tooling, and additional CLI commands
-(`eatf-sign`, `eatf-inspect`) land in successive 0.1.x point
-releases. See the [CHANGELOG](./CHANGELOG.md) for per-release
-contents and [`test-vectors/README.md`](./test-vectors/README.md) for
-the conformance contract any independent implementation can verify
-against.
+Coming next (per [ROADMAP.md](./ROADMAP.md)): six failure-mode
+vectors + GitHub Action (v0.1.4); OVERT receipt schema + expanded
+docs (v0.1.5); Python verifier (v0.2.0); Go verifier (v0.3.0).

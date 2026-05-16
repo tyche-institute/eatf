@@ -1,0 +1,7 @@
+# test-vectors/keys/dev-rsa-4096.key is checked into the repository
+# intentionally — see test-vectors/keys/README.md. Both halves of this
+# keypair are public; the private half exists in the repo so anyone
+# cloning it can regenerate test-vectors/valid/minimal-roundtrip/
+# byte-for-byte and confirm conformance. Production verifiers should
+# treat this key's fingerprint as a known-bad anchor.
+test-vectors/keys/dev-rsa-4096.key:private-key:1

@@ -13,6 +13,62 @@ library major.
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-05-15
+
+First release with a runnable offline signer. Closes the round-trip
+loop: external parties can now both verify and produce `.aep`
+packages from the public repository alone.
+
+### Added
+- **`lib/src/signer.ts`** — `sign()` function added to `@eatf/verifier`.
+  Takes a payload + RSA keypair + metadata + OVERT scope + RFC 3161
+  timestamp token, returns a v0.1-conformant `.aep` ZIP. Uses the
+  Java-form canonical bytes (`canonical.bin == response.txt`) and
+  RSASSA-PKCS1-v1_5 over SHA-256, matching the verifier's
+  expectation exactly.
+- **`cli/eatf-sign/`** — `@eatf/sign-cli` 0.1.3: thin Node CLI
+  wrapper over `sign()`. Supports `--gen-rsa` for one-off dev
+  keypair generation, and a `--timestamp <path.aep>:timestamp.tsr`
+  shorthand for reusing an RFC 3161 token from an existing package
+  (the offline-by-default option). No network calls; the signer
+  does not contact any TSA.
+- **`test-vectors/keys/dev-rsa-4096.{key,pem}`** — public-and-
+  private development RSA keypair, checked into the repo
+  intentionally so that anyone can regenerate the round-trip
+  vector and confirm byte-equality. README explicitly marks the
+  key as a known-bad anchor for production verifiers.
+- **`test-vectors/valid/minimal-roundtrip/`** — produced by
+  `eatf-sign` from `dev-rsa-4096.key`, verifies clean with
+  `eatf-verify`. Reuses the RFC 3161 token from
+  `valid-overt-profile/` (verifier accepts mismatched-imprint
+  timestamps as long as the SignerInfo signature still verifies
+  against the embedded certificate).
+- **CI** — new `roundtrip` job. Builds the verifier, builds the
+  signer CLI, signs a fixture payload with the dev key, runs the
+  verifier on the result, asserts `verify=true`. Catches any
+  regression that breaks signer↔verifier agreement.
+
+### Changed
+- **`docs/aep-profile.md`** — wire-format spec now matches the
+  verifier and signer reality:
+  - Classical suite identified as RSASSA-PKCS1-v1_5 + SHA-256 (the
+    v0.1.2 doc incorrectly said RSA-PSS).
+  - Post-quantum signature entry renamed to `signature_pqc.sig`
+    (paired with `pqc_public_key.pem`) — matches the verifier
+    code. The v0.1.2 doc incorrectly said `signature.mldsa`.
+  - Timestamp section notes that legacy packages with mismatched
+    imprints are still accepted as long as the SignerInfo signature
+    verifies against its embedded certificate.
+- **`lib/package.json`** version bumped to `0.1.3`. The
+  `@eatf/verifier` package now exports both `verify` and `sign`.
+
+### Not yet in this release
+- ML-DSA-65 signing in `eatf-sign` (verifier already handles
+  packages that carry it; signer support lands next).
+- Six tampered failure-mode vectors (v0.1.4).
+- OVERT receipt JSON Schema (v0.1.5).
+- Expanded `docs/` spec pages (v0.1.5).
+
 ## [0.1.2] — 2026-05-15
 
 Aligns the v0.1 wire-format documentation and schemas with the
@@ -122,7 +178,8 @@ This 0.1.0 release deliberately shipped specifications and
 scaffolding before runnable code. v0.1.1 replaces the lib/ and
 cli/eatf-verify/ scaffolding with the real implementation.
 
-[Unreleased]: https://github.com/tyche-institute/eatf/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/tyche-institute/eatf/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.3
 [0.1.2]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.2
 [0.1.1]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.1
 [0.1.0]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.0
