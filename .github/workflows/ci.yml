@@ -165,6 +165,30 @@ jobs:
           set -euo pipefail
           node cli/eatf-verify/bin/eatf-verify.js test-vectors/valid/minimal-roundtrip/package.aep
 
+  python-verifier:
+    name: Python verifier (lib-python) — conformance + pytest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install the Python verifier with dev extras
+        working-directory: lib-python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: pytest — fresh-port conformance against shared test-vectors/
+        working-directory: lib-python
+        run: pytest -q
+      - name: CLI conformance — exit code parity with the TS verifier
+        run: |
+          set -euo pipefail
+          eatf-verify-py --conformance test-vectors/
+
   hygiene:
     name: Repository hygiene
     runs-on: ubuntu-latest
@@ -174,7 +198,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          bad=$(git ls-files | grep -E '(^|/)(node_modules|dist|build|target|__pycache__)(/|$)' || true)
+          bad=$(git ls-files | grep -E '(^|/)(node_modules|dist|build|target|__pycache__|\.venv)(/|$)' || true)
           if [ -n "$bad" ]; then
             printf 'Forbidden artefacts checked in:\n%s\n' "$bad"
             exit 1

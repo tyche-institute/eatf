@@ -13,6 +13,57 @@ library major.
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-05-17
+
+Second-implementation milestone. Adds a complete Python verifier
+(`lib-python/`) as an independent fresh port of the canonical
+TypeScript reference. Both implementations share the same
+`test-vectors/` set and produce the same `verify=true | false`
+contract for every vector.
+
+This release is what proves the v0.1 spec is implementable from
+documentation alone: the Python port shares zero code with the TS
+reference and was written against `docs/aep-profile.md` plus the
+shared vectors only. The conformance contract holds across both.
+
+The library API and CLI surface of the TypeScript reference are
+unchanged. No wire-format change. The minor bump reflects the
+**second-implementation** milestone in `ROADMAP.md`, not a
+breaking change.
+
+### Added
+- **`lib-python/`** — full Python verifier package, published as
+  `eatf-verifier` on PyPI (planned). Modules mirror the TS layout
+  (`canonical.py`, `hash.py`, `rsa.py`, `tsa.py`, `mldsa.py`,
+  `overt.py`, `verifier.py`, `cli.py`). Public API: `from
+  eatf_verifier import verify, VerifyOptions, VerifyResult`.
+- **`eatf-verify-py` CLI** — `--conformance`, `--batch`, `--json`,
+  single-file modes; exit codes match the Node CLI (`0` all valid,
+  `1` one or more failures, `2` bad usage).
+- **`lib-python/tests/test_conformance.py`** — pytest suite that
+  walks `test-vectors/` and asserts every vector matches its
+  declared `verify-expected.txt`.
+- **CI `python-verifier` job** — runs the Python conformance set
+  on Python 3.11 / 3.12 / 3.13; fails if either pytest or the CLI
+  `--conformance` exit code drifts from the TS reference.
+- **`rsa.py: verify_rsa_digest_info`** — Java-reference
+  compatibility path. Strips PKCS#1 v1.5 padding and compares the
+  trailing 32-byte digest, exactly as `verifyRsaDigestInfo` in
+  `lib/src/rsa.ts`. Required because the Java backend signs
+  DigestInfo via BouncyCastle, which emits the SHA-256
+  AlgorithmIdentifier without NULL parameters; strict ASN.1
+  parsers (including `pyca/cryptography.verify(..., PKCS1v15(),
+  SHA256())`) then reject the wire signature even though the
+  underlying RSA operation succeeds.
+
+### Notes
+- Cryptography stack: `pyca/cryptography` for RSA + X.509,
+  `asn1crypto` for CMS / RFC 3161 parsing, `oqs-python` (optional
+  `[pqc]` extra) for ML-DSA-65.
+- TSA chain-to-root validation is not yet in the Python port; the
+  TS reference's `DEFAULT_TSA_TRUST_LIST` pin will land in a 0.2.x
+  point release. CLI accepts `--tsa-trust-list` today for parity.
+
 ## [0.1.5] — 2026-05-17
 
 Documentation and schema completeness. Fills in every `docs/`

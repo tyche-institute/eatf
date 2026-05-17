@@ -28,6 +28,13 @@ coverage/
 *.lcov
 .pytest_cache/
 
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.ruff_cache/
+
 # Reference deployment artefacts (must never be checked in)
 *.aep
 !test-vectors/**/*.aep
