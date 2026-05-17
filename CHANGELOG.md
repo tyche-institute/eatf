@@ -13,6 +13,48 @@ library major.
 
 ## [Unreleased]
 
+## [0.1.5] — 2026-05-17
+
+Documentation and schema completeness. Fills in every `docs/`
+stub that has been carrying a placeholder since v0.1.0, and adds
+a second JSON Schema covering the OVERT receipt that the verifier
+already validates structurally.
+
+### Added
+- **`schemas/overt-receipt-v1.schema.json`** — JSON Schema
+  2020-12 for the `overt_receipt.json` entry. Constrains the
+  receipt's shape; cross-document consistency between receipt and
+  manifest is enforced by the verifier itself
+  (`lib/src/overt.ts`). Validated against all 11 conformance
+  vectors as part of CI.
+- **`docs/architecture.md`** (~280 lines, previously stub) —
+  full layered overview, per-layer responsibilities, mapping to
+  `lib/src/*` modules, trust boundaries, cryptographic-primitives
+  summary table.
+- **`docs/threat-model.md`** (~180 lines) — focused STRIDE
+  analysis mapped to the eight verifier checks, eleven-row
+  threat table, residual-risks section, future-hardening list.
+- **`docs/attestation-profile.md`** (~190 lines) — W3C VC 2.0
+  profile for the planned `attestations/agent.vc.json` entry,
+  private-CA-default + external-issuer-bound modes, cross-document
+  consistency rules, explicit non-implementation marker for v0.1.
+- **`docs/glossary.md`** (~180 lines) — EATF-specific terms,
+  standards-relationship labels (IMPLEMENTED / ALIGNED /
+  REFERENCED / ADDRESSED), implementation-maturity labels,
+  cryptographic-primitives definitions, regulatory references
+  (EU AI Act, eIDAS, GDPR).
+- **`docs/design-rationale.md`** (~230 lines) — the *why* behind
+  each major design decision: offline verification, hybrid
+  signing, RSASSA-PKCS1-v1_5 default, ML-DSA-65 selection, JCS
+  canonicalisation, RFC 3161 timestamps, private CA for agents,
+  open specification, DCO over CLA, no hosted registry.
+
+### Changed
+- **CI `schema-validate` job** now compiles both schemas (AEP
+  metadata + OVERT receipt) and validates the corresponding
+  document extracted from every conformance vector. Catches any
+  drift between the schemas and the runtime format.
+
 ## [0.1.4] — 2026-05-17
 
 Failure-mode coverage. Six new invalid conformance vectors that
@@ -228,7 +270,8 @@ This 0.1.0 release deliberately shipped specifications and
 scaffolding before runnable code. v0.1.1 replaces the lib/ and
 cli/eatf-verify/ scaffolding with the real implementation.
 
-[Unreleased]: https://github.com/tyche-institute/eatf/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/tyche-institute/eatf/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.5
 [0.1.4]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.4
 [0.1.3]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.3
 [0.1.2]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.2

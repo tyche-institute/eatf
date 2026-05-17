@@ -50,25 +50,28 @@ jobs:
           node-version: "20"
       - name: Install ajv-cli
         run: npm install -g ajv-cli@5 ajv-formats@3
-      - name: Compile schema (sanity check; draft-2020-12)
+      - name: Compile schemas (sanity check; draft-2020-12)
         run: |
           set -euo pipefail
-          # --spec=draft2020 is required because schemas/aep-v1.schema.json
-          # declares $schema = https://json-schema.org/draft/2020-12/schema.
-          # ajv-cli defaults to draft-07 and refuses to load the metaschema
-          # without this flag.
-          ajv compile --strict=false --spec=draft2020 -c ajv-formats \
-            -s schemas/aep-v1.schema.json
-      - name: Validate metadata.json from every conformance vector
+          # --spec=draft2020 is required because both schemas declare
+          # $schema = https://json-schema.org/draft/2020-12/schema and
+          # ajv-cli defaults to draft-07.
+          for schema in schemas/aep-v1.schema.json schemas/overt-receipt-v1.schema.json; do
+            ajv compile --strict=false --spec=draft2020 -c ajv-formats -s "$schema"
+          done
+      - name: Validate metadata.json + overt_receipt.json from every conformance vector
         run: |
           set -euo pipefail
-          mkdir -p /tmp/aep-meta
+          mkdir -p /tmp/aep-meta /tmp/aep-overt
           for vector in test-vectors/valid/*/package.aep test-vectors/invalid/*/package.aep; do
             name=$(basename "$(dirname "$vector")")
             unzip -p "$vector" metadata.json > "/tmp/aep-meta/${name}.json"
-            echo "validating $vector → /tmp/aep-meta/${name}.json"
+            unzip -p "$vector" overt_receipt.json > "/tmp/aep-overt/${name}.json"
+            echo "validating $vector"
             ajv validate --strict=false --spec=draft2020 -c ajv-formats \
               -s schemas/aep-v1.schema.json -d "/tmp/aep-meta/${name}.json"
+            ajv validate --strict=false --spec=draft2020 -c ajv-formats \
+              -s schemas/overt-receipt-v1.schema.json -d "/tmp/aep-overt/${name}.json"
           done
 
   verifier-test:
