@@ -1,0 +1,104 @@
+name: publish-python
+
+# Publishes lib-python/ to PyPI as `eatf-verifier` when a tag of the
+# form `v*` is pushed, OR when manually triggered via workflow_dispatch.
+#
+# Authentication uses PyPI Trusted Publishing (OpenID Connect). No
+# API token is stored in the repo. The PyPI side must be configured
+# with a Trusted Publisher entry pointing at:
+#
+#   Repository owner:  tyche-institute
+#   Repository name:   eatf
+#   Workflow filename: publish-python.yml
+#   Environment:       pypi
+#
+# Setup steps (one-time, performed by the PyPI account owner):
+#   1. Register the `eatf-verifier` project name on PyPI (either via
+#      a first manual upload using `twine upload` with an API token,
+#      or via PyPI's "Pending Publisher" flow which reserves the
+#      name before the first publish).
+#   2. In the project's PyPI "Publishing" settings, add a Trusted
+#      Publisher entry with the values above.
+#   3. In this repo's Settings → Environments, create an environment
+#      named `pypi`. Optionally restrict it to protected branches
+#      and tags.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build from (e.g. v0.2.1). Defaults to the current ref."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build sdist + wheel
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.show.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+      - name: Build sdist + wheel
+        working-directory: lib-python
+        run: python -m build
+      - name: Show what was built
+        id: show
+        working-directory: lib-python
+        run: |
+          ls -lah dist/
+          version=$(python -c "import tomllib, pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Built eatf-verifier $version."
+      - name: Sanity-check the wheel installs and the CLI smoke-runs
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/check-venv
+          /tmp/check-venv/bin/pip install lib-python/dist/eatf_verifier-${{ steps.show.outputs.version }}-py3-none-any.whl
+          /tmp/check-venv/bin/eatf-verify-py --version
+          /tmp/check-venv/bin/eatf-verify-py test-vectors/valid/minimal-roundtrip/package.aep
+      - name: Upload dist/ as artefact for the publish job
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: lib-python/dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/eatf-verifier/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write   # required for PyPI OIDC trusted publishing
+    steps:
+      - name: Download built dist/
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Publish to PyPI (Trusted Publisher / OIDC)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Defaults to PyPI; no token needed (OIDC).
+          packages-dir: dist/
+          # Skip if a build with this version is already uploaded.
+          # Prevents re-tagging from creating a noisy failure when the
+          # same version was already published manually.
+          skip-existing: true
