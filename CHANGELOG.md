@@ -13,6 +13,56 @@ library major.
 
 ## [Unreleased]
 
+## [0.1.4] — 2026-05-17
+
+Failure-mode coverage. Six new invalid conformance vectors that
+exercise the six classes of tamper a v0.1-conformant verifier
+must catch.
+
+### Added
+- **`test-vectors/invalid/tampered-canonical-bin/`** — one byte
+  flipped in `canonical.bin`; hash chain mismatch.
+- **`test-vectors/invalid/tampered-metadata/`** —
+  `metadata.policy_decision` swapped; OVERT receipt cross-check
+  fails.
+- **`test-vectors/invalid/bad-signature-classical/`** — one byte
+  flipped inside the base64-decoded `signature.sig`;
+  RSASSA-PKCS1-v1_5 verification fails.
+- **`test-vectors/invalid/untrusted-issuer/`** — `public_key.pem`
+  swapped for a freshly-generated unrelated RSA-4096 public key;
+  the original signature does not verify against the swap.
+- **`test-vectors/invalid/missing-canonical-bin/`** — required
+  envelope entry deleted; verifier fails the envelope-integrity
+  check before any cryptographic step.
+- **`test-vectors/invalid/bad-timestamp/`** — three bytes flipped
+  inside `timestamp.tsr`; pkijs cannot extract a usable TimeStampToken,
+  verifier reports "timestamp.tsr missing or empty".
+- **`scripts/generate-invalid-vectors.mjs`** — deterministic
+  build-time generator that produces all six tampered packages
+  from `valid/minimal-roundtrip/package.aep`. Re-running produces
+  byte-identical output. Inspect this script to audit exactly
+  what each tamper does.
+- **`scripts/package.json`** — minimal manifest pinning `fflate`
+  so the generator runs from a clean clone without depending on
+  `lib/node_modules`.
+- **`test-vectors/README.md`** — table of all eleven vectors
+  (4 valid + 7 invalid), expected output of a full conformance run.
+
+### Changed
+- Conformance contract now requires verifiers to handle six new
+  failure modes correctly. Output of
+  `eatf-verify --conformance test-vectors/` goes from
+  `4 verified, 1 rejected, 0 contract mismatches` →
+  `4 verified, 7 rejected, 0 contract mismatches`.
+
+### Coming next
+- `tyche-institute/verify-aep-action@v1` — a sibling repository
+  shipping a GitHub composite Action that wraps `eatf-verify`,
+  for downstream pipelines that want to assert every `.aep` they
+  produce verifies cleanly before merging.
+- v0.1.5 — OVERT receipt JSON Schema + fill in the remaining
+  `docs/` stubs.
+
 ## [0.1.3] — 2026-05-15
 
 First release with a runnable offline signer. Closes the round-trip
@@ -178,7 +228,8 @@ This 0.1.0 release deliberately shipped specifications and
 scaffolding before runnable code. v0.1.1 replaces the lib/ and
 cli/eatf-verify/ scaffolding with the real implementation.
 
-[Unreleased]: https://github.com/tyche-institute/eatf/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/tyche-institute/eatf/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.4
 [0.1.3]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.3
 [0.1.2]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.2
 [0.1.1]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.1
