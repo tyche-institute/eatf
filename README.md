@@ -162,10 +162,12 @@ implementations for verifiable AI agent attestation infrastructure.
 
 ## Status
 
-**v0.2.0** ships a second, independent verifier in Python — same
-wire format, same conformance contract, zero shared code with the
-TypeScript reference. End-to-end round-trip + offline verification
-in either language:
+**v0.2.1** continues the two-implementation line — second,
+independent verifier in Python, same wire format, same
+conformance contract, zero shared code with the TypeScript
+reference. v0.2.1 adds the TSA chain-to-root pin check that v0.2.0
+promised for the Python side, mirroring `verifyTsaTrust` in TS
+against the same three pinned DigiCert public roots:
 
 - [`lib/`](./lib/) — `@eatf/verifier` (TypeScript / Node 20+ /
   browser). Exports both `verify()` and `sign()`. Full pipeline:

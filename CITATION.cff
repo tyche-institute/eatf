@@ -1,0 +1,60 @@
+# Canonical machine-readable citation for the EATF reference
+# implementation. GitHub's "Cite this repository" button reads this
+# file; Zenodo's GitHub integration also picks it up on release.
+#
+# Schema: https://citation-file-format.github.io/
+
+cff-version: 1.2.0
+title: "EATF — Agent Evidence Package: open specification and reference verifiers"
+message: "If you use EATF in academic work, please cite this software."
+type: software
+license: Apache-2.0
+repository-code: "https://github.com/tyche-institute/eatf"
+url: "https://github.com/tyche-institute/eatf"
+version: "0.2.1"
+date-released: "2026-05-17"
+
+authors:
+  - name: "Tyche Institute Contributors"
+    email: "dev@tyche.institute"
+    website: "https://github.com/tyche-institute"
+
+keywords:
+  - "EATF"
+  - "agent attestation"
+  - "evidence package"
+  - "AEP"
+  - "RFC 3161"
+  - "ML-DSA-65"
+  - "post-quantum cryptography"
+  - "EU AI Act"
+  - "offline verification"
+  - "RSASSA-PKCS1-v1_5"
+  - "OVERT receipt"
+  - "Python verifier"
+  - "TypeScript verifier"
+
+abstract: >
+  EATF is an open specification and reference implementation for
+  offline-verifiable AI agent attestation. The v0.2.x line ships
+  two independent verifiers — a TypeScript implementation
+  (Node + browser, via Web Crypto and pkijs) and a Python
+  implementation (3.11+, via pyca/cryptography, asn1crypto, and
+  optional oqs-python for ML-DSA-65) — validated against a
+  shared set of conformance vectors. Both implementations produce
+  the same verify=true / false outcome on every vector; CI
+  rejects any drift. EATF is not an eIDAS trust service under
+  Article 3(16). The project publishes a specification and
+  reference verifiers; it does not operate a registry, issue
+  qualified certificates, or maintain a managed service.
+
+preferred-citation:
+  type: software
+  title: "EATF — Agent Evidence Package: open specification and reference verifiers"
+  authors:
+    - name: "Tyche Institute Contributors"
+      email: "dev@tyche.institute"
+  version: "0.2.1"
+  year: 2026
+  license: Apache-2.0
+  url: "https://github.com/tyche-institute/eatf"
