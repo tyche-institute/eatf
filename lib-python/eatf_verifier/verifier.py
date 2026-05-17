@@ -19,7 +19,8 @@ from .canonical import jcs
 from .hash import sha256, to_hex
 from .overt import parse_and_validate_overt_receipt
 from .rsa import load_public_key_pem, verify_rsa, verify_rsa_digest_info
-from .tsa import inspect_tsa
+from .tsa import inspect_tsa, verify_tsa_trust
+from .tsa_trust_list import DEFAULT_TSA_TRUST_LIST
 
 
 @dataclass
@@ -29,9 +30,12 @@ class VerifyOptions:
     offline_only: bool = True
     tsa_trust_list: list[bytes] = field(default_factory=list)
     """List of PEM-encoded TSA root certificates. When empty the
-    chain-to-root check is skipped. Currently the Python port does
-    not yet perform chain validation — option reserved for the
-    same shape as the TypeScript reference."""
+    verifier falls through to :data:`DEFAULT_TSA_TRUST_LIST`
+    (the three DigiCert public roots, mirroring the TypeScript
+    reference). Pass ``[b""]`` or an explicit empty list semantics
+    via a wrapper if you want to opt out of the chain check
+    entirely (the v0.2.1 contract treats empty as fall-through;
+    a future minor may add an explicit ``skip`` sentinel)."""
 
 
 @dataclass
@@ -190,12 +194,25 @@ def verify(data: bytes, options: VerifyOptions | None = None) -> VerifyResult:
             receipt,
         )
 
+    # 10. TSA chain-to-root (single-step pin check).
+    # Mirrors lib/src/verifier.ts: if the caller didn't pass a custom
+    # trust list, fall through to DEFAULT_TSA_TRUST_LIST (DigiCert
+    # public roots). An empty list opts out of the check entirely.
+    trust_list = (
+        opts.tsa_trust_list if opts.tsa_trust_list else DEFAULT_TSA_TRUST_LIST
+    )
+    tsa_trusted: bool | None = None
+    if trust_list:
+        trust = verify_tsa_trust(tsa, trust_list)
+        tsa_trusted = trust.trusted
+        report.append(f"TSA chain-to-root: trusted={trust.trusted}. {trust.reason}")
+
     return VerifyResult(
         valid=True,
         report=report,
         failure_reason=None,
         pqc_valid=pqc_valid,
-        tsa_trusted=None,  # chain-to-root not yet implemented
+        tsa_trusted=tsa_trusted,
         metadata=metadata,
         overt_receipt=receipt,
     )

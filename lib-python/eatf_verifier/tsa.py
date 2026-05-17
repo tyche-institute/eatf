@@ -30,6 +30,23 @@ class TsaCheck:
     signature_verified: bool | None  # None when no embedded cert
     signer_subject: str | None
     signer_issuer: str | None
+    embedded_cert_count: int = 0
+
+
+@dataclass
+class TsaTrustResult:
+    """Outcome of the trust-anchor cross-check.
+
+    `trusted=True`  — TSA signing cert's issuer matches a pinned root's subject.
+    `trusted=False` — no pinned root matched.
+    `trusted=None`  — either no embedded cert in the TSA token, or
+                       an empty trust list was supplied (check skipped).
+    """
+
+    trusted: bool | None
+    reason: str
+    signer_subject: str | None = None
+    signer_issuer: str | None = None
 
 
 def inspect_tsa(tsr_b64: str, expected_hash_hex: str) -> TsaCheck:
@@ -78,10 +95,12 @@ def inspect_tsa(tsr_b64: str, expected_hash_hex: str) -> TsaCheck:
     signer_subject = None
     signer_issuer = None
     signature_verified: bool | None = None
+    embedded_cert_count = 0
 
     try:
         certs = sd["certificates"]
         if certs:
+            embedded_cert_count = len(certs)
             cert_der = certs[0].chosen.dump()
             cert = load_der_x509_certificate(cert_der)
             signer_subject = cert.subject.rfc4514_string()
@@ -128,7 +147,72 @@ def inspect_tsa(tsr_b64: str, expected_hash_hex: str) -> TsaCheck:
         signature_verified=signature_verified,
         signer_subject=signer_subject,
         signer_issuer=signer_issuer,
+        embedded_cert_count=embedded_cert_count,
     )
+
+
+def verify_tsa_trust(
+    check: TsaCheck, trust_list: list[bytes]
+) -> TsaTrustResult:
+    """Mirror of lib/src/tsa.ts: verifyTsaTrust.
+
+    Decision rule: the TSA signing cert's *issuer DN* must equal
+    one of the trust list's *subject DN*s. This is a single-step
+    pin check, not full RFC 5280 path validation.
+
+    Returns `trusted=None` when there's nothing to validate
+    (no embedded cert, or empty trust list).
+    """
+    if not check.tsa_present or check.embedded_cert_count == 0:
+        return TsaTrustResult(
+            trusted=None,
+            reason="TSA not present or no embedded cert; nothing to validate.",
+            signer_subject=check.signer_subject,
+            signer_issuer=check.signer_issuer,
+        )
+    if not trust_list:
+        return TsaTrustResult(
+            trusted=None,
+            reason="Empty trust list — chain-to-root check skipped. Pass roots to enforce.",
+            signer_subject=check.signer_subject,
+            signer_issuer=check.signer_issuer,
+        )
+    for pem in trust_list:
+        try:
+            root_cert = _parse_pem_cert(pem)
+        except Exception as e:
+            return TsaTrustResult(
+                trusted=False,
+                reason=f"Trust list entry failed to parse: {e}",
+            )
+        root_subject = root_cert.subject.rfc4514_string()
+        if root_subject == check.signer_issuer:
+            return TsaTrustResult(
+                trusted=True,
+                reason=f"Signer issuer matches pinned root ({root_subject}).",
+                signer_subject=check.signer_subject,
+                signer_issuer=check.signer_issuer,
+            )
+    return TsaTrustResult(
+        trusted=False,
+        reason=(
+            f'Signer issuer "{check.signer_issuer}" does not match any pinned root.'
+        ),
+        signer_subject=check.signer_subject,
+        signer_issuer=check.signer_issuer,
+    )
+
+
+def _parse_pem_cert(pem: bytes):
+    """Decode a PEM CERTIFICATE block into a cryptography x509 object."""
+    import base64
+
+    text = pem.decode("ascii", errors="replace")
+    body = "".join(
+        line for line in text.splitlines() if not line.startswith("-----")
+    )
+    der = base64.b64decode(body)
+    return load_der_x509_certificate(der)
 
 
 def _extract_token(raw: bytes) -> bytes | None:
@@ -161,4 +245,5 @@ def _empty() -> TsaCheck:
         signature_verified=None,
         signer_subject=None,
         signer_issuer=None,
+        embedded_cert_count=0,
     )

@@ -13,6 +13,54 @@ library major.
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-05-17
+
+Closes the point-release follow-up promised in v0.2.0's notes:
+the Python verifier now performs the same TSA chain-to-root pin
+check as the TypeScript reference, and ships the same three
+pinned DigiCert public roots.
+
+The single-step pin rule is unchanged from the TS reference: the
+TSA signing certificate's *issuer DN* must equal one of the
+pinned roots' *subject DN*. This is not full RFC 5280 path
+validation; it matches what `verifyTsaTrust` in
+`lib/src/tsa.ts` does today, byte-for-byte. Empty trust list
+means the check is skipped; tokens without an embedded signing
+cert (which includes all current v0.1 conformance vectors)
+return `tsa_trusted=None`.
+
+The conformance contract over the existing 11-vector set is
+unchanged (4 verified, 7 rejected, 0 contract mismatches).
+
+### Added
+- **`lib-python/eatf_verifier/tsa_trust_list.py`** — the three
+  pinned DigiCert public root PEMs (Global Root CA, Assured ID
+  Root CA, Trusted Root G4) plus their canonical SHA-256
+  fingerprints. Verbatim ports of the constants in
+  `lib/src/tsa-trust-list.ts`.
+- **`tsa.verify_tsa_trust()`** + **`TsaTrustResult`** — Python
+  port of `verifyTsaTrust` / `TsaTrustResult`.
+- **`tsa.TsaCheck.embedded_cert_count`** — new field used by the
+  trust check to distinguish "no embedded cert" from "trust check
+  failed".
+- **`tests/test_trust_list.py`** — fingerprint sanity tests
+  mirroring `lib/test/tsa-trust-list.test.ts`. An accidental byte
+  edit in any pinned PEM fails immediately.
+- **`tests/test_tsa_trust.py`** — unit tests for the four return
+  cases of `verify_tsa_trust` (trusted, untrusted, no embedded
+  cert, empty trust list).
+- **`DEFAULT_TSA_TRUST_LIST`** re-exported from
+  `eatf_verifier` for caller convenience.
+
+### Changed
+- `verify(...)` now applies `DEFAULT_TSA_TRUST_LIST` when the
+  caller doesn't pass a custom one (matches TS reference). The
+  report gains one new line: `TSA chain-to-root: trusted=...`.
+  No vector's verify-true/false outcome changes — the trust
+  check is informational only, exactly as in the TS reference.
+- `VerifyOptions.tsa_trust_list` docstring updated to document
+  the fall-through behaviour.
+
 ## [0.2.0] — 2026-05-17
 
 Second-implementation milestone. Adds a complete Python verifier

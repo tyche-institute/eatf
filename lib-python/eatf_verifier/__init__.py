@@ -16,7 +16,13 @@ vectors in `../test-vectors/`; see `../docs/architecture.md` for
 the layered structure both implementations follow.
 """
 
+from .tsa_trust_list import DEFAULT_TSA_TRUST_LIST
 from .verifier import VerifyOptions, VerifyResult, verify
 
-__all__ = ["verify", "VerifyOptions", "VerifyResult"]
-__version__ = "0.2.0"
+__all__ = [
+    "verify",
+    "VerifyOptions",
+    "VerifyResult",
+    "DEFAULT_TSA_TRUST_LIST",
+]
+__version__ = "0.2.1"

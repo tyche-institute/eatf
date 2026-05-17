@@ -54,12 +54,14 @@ failure; `2` bad CLI usage or unreadable file.
 
 ## What this implementation does NOT yet do
 
-- **TSA chain-to-root validation.** The current port parses the
-  RFC 3161 timestamp token and verifies the embedded SignerInfo
-  signature against the embedded TSA certificate, but does not
-  yet walk the certificate chain to a pinned root. The TypeScript
-  reference does this via `DEFAULT_TSA_TRUST_LIST`; the Python
-  port will catch up in a 0.2.x point release.
+- **Full RFC 5280 certificate path validation for TSAs.** As of
+  v0.2.1 the port performs the same *single-step pin* check the
+  TypeScript reference does: the TSA signing cert's issuer DN
+  must equal one of the pinned roots' subject DN
+  (`DEFAULT_TSA_TRUST_LIST` ships the three DigiCert public
+  roots). Multi-step chain walking with intermediate-CA
+  enrolment and revocation handling is a planned 0.3.x feature
+  in both verifiers.
 - **W3C VC `attestations/agent.vc.json` parsing.** Neither the
   TypeScript reference nor this port handles the optional VC
   entry yet (see [`../docs/attestation-profile.md`](../docs/attestation-profile.md)).
