@@ -1,5 +1,7 @@
 # Changelog
 
+> Engineering-level change log for the EATF reference implementation, maintained by [Tyche Institute](https://eatf.eu/about). Sprint structure reflects internal development cadence; specification and SDK release notes are the user-facing summary.
+
 All notable user-facing and architecture-level changes to **Aletheia AI** are tracked here, grouped by sprint.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semantic versioning is used for release tags.
 
