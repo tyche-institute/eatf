@@ -270,6 +270,56 @@ operator-configured trust anchors, conformance vectors, no
 discovery layer at framework level) replaces what a registry
 would have provided.
 
+## 11. Runtime honesty is deliberately out of scope
+
+**Decision:** The AEP envelope attests *what* was signed and
+*when* — author identity, content integrity, and an RFC 3161
+timestamp anchored to a third-party TSA. It does **not** attempt
+to attest whether the agent behaved honestly at runtime: whether
+the model that produced the signed output was faithful to its
+specification, free of deceptive intent, or internally
+consistent with the policy the operator believes it follows. We
+adopt the term *runtime honesty* (from cross-spec discussion in
+[issue #1](https://github.com/tyche-institute/eatf/issues/1)) to
+name this excluded property precisely.
+
+**Alternatives considered:** Bind a TEE attestation, an
+optimistic-challenge re-execution proof, or a zkML inference
+proof into the envelope itself, so that a relying party reading
+the package can also reason about model behaviour at the moment
+of signing.
+
+**Why we excluded it:**
+
+- **Different problem, different primitives.** Runtime honesty
+  requires either a trusted execution environment, an
+  optimistic-challenge protocol with economic guarantees, or a
+  cryptographic proof of inference. Each is an active research
+  area on a different maturity curve from RFC 3161 timestamps
+  and JCS-canonicalised signatures. Folding any of them into
+  v0.1 would couple EATF's stable substrate to moving targets.
+- **Composition, not absorption.** The envelope is intentionally
+  the bottom layer. A deployment that needs a runtime-honesty
+  guarantee can stack a TEE attestation *under* the envelope
+  (TEE attests the model binary; envelope signs the TEE quote
+  alongside the output) or an optimistic-challenge layer *over*
+  the envelope, without changing the envelope itself. The same
+  composition story applies to revocation freshness and to
+  intent-binding protocols (AP2-style).
+- **Scope honesty.** A spec that promised runtime honesty
+  without delivering it would damage the property the envelope
+  *does* deliver — namely, that the signature, timestamp, and
+  hash chain mean exactly what they say and nothing more.
+  Auditors reading a package a decade later need that boundary
+  to be precise.
+
+**Cost accepted:** A reader of an AEP package cannot conclude
+from the envelope alone that the agent was *honest* — only that
+the output was *signed*, *timestamped*, and *unmodified since*.
+Any honesty claim must come from a layer the deployment
+explicitly composes with EATF, and the relying party's policy
+must state which composition they require.
+
 ## Related documents
 
 - [`aep-profile.md`](aep-profile.md) — the wire-format these
