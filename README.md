@@ -2,6 +2,8 @@
 
 # Agent Trust Framework
 
+> Open-source reference implementation maintained by [Tyche Institute](https://eatf.eu/about). The canonical public mirror is [`tyche-institute/eatf`](https://github.com/tyche-institute/eatf); file issues and discussions there.
+
 > **External name:** **EATF** — Agent Trust Framework.  
 > **Internal codename:** **Aletheia AI** (repository and implementation name).
 
