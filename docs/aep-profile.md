@@ -11,6 +11,22 @@ Qualified Electronic Attestation of Attributes (QEAA) under Article
 3(45). The verifier in [`lib/`](../lib/) implements this profile and
 is the executable source of truth alongside this document.
 
+## Conformance
+
+This document is the normative wire-format specification for v0.1.
+RFC 2119 keywords (MUST / SHOULD / MAY) carry their standard meaning
+throughout.
+
+The TypeScript verifier in [`lib/`](../lib/) and the independent
+Python verifier in [`lib-python/`](../lib-python/) are reference
+implementations. Both MUST produce the same `verify=true|false`
+result for every package in [`test-vectors/`](../test-vectors/),
+and CI enforces this on every commit. An alternative implementation
+conforms to v0.1 by matching that contract — the wire format
+specified here plus the test-vector results — in whatever language
+its author chooses; nothing else in either reference implementation
+is normative.
+
 ## Goal
 
 The AEP is a self-contained, offline-verifiable artefact that
@@ -24,9 +40,9 @@ integrity, and timeliness from the artefact alone, given only:
 
 The issuer public key is carried inside the package itself
 (`public_key.pem`). Trust in that key is configured by the verifier
-(typically pinned to a key-history mirror; see
-[`docs/specs/public-key-mirror.md`](specs/public-key-mirror.md) for
-the deployment-managed scheme).
+(typically pinned to a key-history mirror; the reference deployment
+publishes its mirror at
+[`tyche-institute/eatf-trust-anchors`](https://github.com/tyche-institute/eatf-trust-anchors)).
 
 ## Envelope
 
@@ -57,9 +73,12 @@ package.aep/
 │                       receipt's content_hash is the only binding
 │                       to the payload.
 ├── signature.sig       Classical signature over canonical.bin,
-│                       base64-encoded (ASCII + LF). v0.1 suite:
-│                       RSASSA-PKCS1-v1_5 with SHA-256, using the
-│                       key in public_key.pem.
+│                       base64-encoded (ASCII + LF). v0.1 reference
+│                       packages use suite urn:eatf:sig:rsa4096
+│                       (RSASSA-PKCS1-v1_5 with SHA-256, key in
+│                       public_key.pem); urn:eatf:sig:ecdsa-p256
+│                       is the alternative classical suite carried
+│                       in the same entry.
 ├── signature_pqc.sig   OPTIONAL ML-DSA-65 (NIST FIPS 204)
 │                       signature over canonical.bin, base64-
 │                       encoded. Producers SHOULD include it for
@@ -103,18 +122,21 @@ lower-case, 64 characters. The value in `hash.sha256` MUST equal
 
 ## Signature suites
 
-v0.1 defines two suite identifiers:
+v0.1 defines three suite identifiers:
 
 | Suite identifier              | Algorithm                                       | Signature entry      |
 |-------------------------------|-------------------------------------------------|----------------------|
 | `urn:eatf:sig:rsa4096`        | RSASSA-PKCS1-v1_5 with SHA-256, 4096-bit modulus| `signature.sig`      |
+| `urn:eatf:sig:ecdsa-p256`     | ECDSA over P-256 with SHA-256                   | `signature.sig`      |
 | `urn:eatf:sig:mldsa-65`       | ML-DSA-65 (NIST FIPS 204 / Dilithium3)          | `signature_pqc.sig`  |
 
-A v0.1 package carries at least one classical signature (RSA-PSS or
-ECDSA-P256) in `signature.sig` and SHOULD carry an ML-DSA-65 signature
-in `signature.mldsa`. Verifiers MUST validate the classical signature
-in `signature.sig` and MUST also validate `signature.mldsa` when
-present.
+A v0.1 package carries at least one classical signature
+(`urn:eatf:sig:rsa4096` or `urn:eatf:sig:ecdsa-p256`) in
+`signature.sig` and SHOULD carry an ML-DSA-65 signature in
+`signature_pqc.sig`. v0.1 reference packages use `urn:eatf:sig:rsa4096`
+as the default classical suite. Verifiers MUST validate the
+classical signature in `signature.sig` and MUST also validate
+`signature_pqc.sig` when present.
 
 The classical and post-quantum signatures cover **exactly** the bytes
 of `canonical.bin`. No additional pre-hashing or framing.
@@ -170,12 +192,12 @@ order, before reporting `verify=true`:
    mandatory entries (`canonical.bin`, `hash.sha256`,
    `metadata.json`, `overt_receipt.json`, `public_key.pem`,
    `signature.sig`, `timestamp.tsr`). `response.txt` is mandatory
-   unless `metadata.privacy_mode == true`. `signature.mldsa` is
+   unless `metadata.privacy_mode == true`. `signature_pqc.sig` is
    optional.
 2. **Canonicalisation.** `hash.sha256` matches `SHA-256(canonical.bin)`.
 3. **Classical signature.** `signature.sig` verifies against
    `public_key.pem` over `canonical.bin`.
-4. **Post-quantum signature.** If `signature.mldsa` is present, it
+4. **Post-quantum signature.** If `signature_pqc.sig` is present, it
    verifies against the ML-DSA-65 public key for the same issuer
    over `canonical.bin`.
 5. **Timestamp.** `timestamp.tsr` is a valid RFC 3161 response whose

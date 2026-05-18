@@ -94,9 +94,8 @@ one or more STRIDE categories to the check that mitigates them.
 - **No transparency log.** Each AEP is verified standalone. We have
   no append-only public log of "every package ever issued by this
   operator". A community-run transparency log (sigstore Rekor-style)
-  is an open direction — see the article-in-progress at
-  `~/projects/tyche-research-vault/outlines/on-the-crossroads-marketplace-vs-distributed-trust.md`
-  for the design discussion.
+  is an open direction; the design discussion is in an article-in-
+  progress by the maintainer, planned for 2026.
 - **No revocation.** A compromised operator key cannot be revoked
   through the framework. Operators publish key-rotation events in
   their public-key history mirror

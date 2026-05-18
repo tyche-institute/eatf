@@ -49,9 +49,10 @@ mirrors); the verifier must hold trust anchors locally.
 ## 2. Hybrid classical + post-quantum signing
 
 **Decision:** Every signed package SHOULD carry both a classical
-signature (RSA-PSS or ECDSA-P256) and an ML-DSA-65 post-quantum
-signature. Verifiers MUST validate the classical signature and
-MUST validate the post-quantum signature when present.
+signature (RSASSA-PKCS1-v1_5 with SHA-256, or ECDSA-P256) and an
+ML-DSA-65 post-quantum signature. Verifiers MUST validate the
+classical signature and MUST validate the post-quantum signature
+when present.
 
 **Alternative considered:** Wait for the post-quantum standards
 (NIST FIPS 204/205/206) to be widely supported and switch in one
@@ -249,10 +250,8 @@ or any centralised discovery layer. Verifiers use trust anchors
 they configure themselves; discovery (if any) is the operator's
 choice of mechanism.
 
-**This decision has its own essay-in-progress** at
-`~/projects/tyche-research-vault/outlines/on-the-crossroads-marketplace-vs-distributed-trust.md`
-in the maintainer's research vault, expected to land as a public
-piece in 2026. Short version:
+**This decision has its own essay-in-progress** by the maintainer,
+expected to land as a public piece in 2026. Short version:
 
 - A registry would dissolve the offline-verifiable design
   property by putting a third party in the trust path.

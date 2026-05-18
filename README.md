@@ -10,8 +10,10 @@ progress).
 - A specification for **Agent Evidence Packages (AEP)** — signed,
   timestamped, offline-verifiable bundles documenting agent actions
   and outputs.
-- A reference implementation in JavaScript/TypeScript and Java for
-  producing, signing, and verifying AEPs.
+- Two independent reference implementations — TypeScript
+  ([`lib/`](./lib/)) and Python ([`lib-python/`](./lib-python/)) —
+  for producing, signing, and verifying AEPs. A Go implementation is
+  planned for v0.3.0 (see [ROADMAP.md](./ROADMAP.md)).
 - A set of test vectors and tools for conformance verification.
 - Reference deployments in academic, educational, and family-business
   contexts demonstrating framework capabilities.
@@ -102,9 +104,11 @@ for how to mint a fresh RFC 3161 timestamp from a public TSA.
 
 - [Architecture](./docs/architecture.md) — layered overview of the
   reference implementation and the standards-relationship legend.
-- [AEP profile specification](./docs/aep-profile.md) — the canonical
-  Agent Evidence Package format (ZIP layout, JCS canonicalisation,
-  hybrid RSA-4096 + ML-DSA-65 signing).
+- [AEP profile specification](./docs/aep-profile.md) — **the
+  normative wire format** for Agent Evidence Packages (ZIP layout,
+  JCS canonicalisation, hybrid classical + ML-DSA-65 signing). The
+  conformance contract for alternative implementations is defined
+  here.
 - [Attestation profile specification](./docs/attestation-profile.md)
   — agent attestation record format and signing modes.
 - [Threat model](./docs/threat-model.md) — STRIDE-style trust
