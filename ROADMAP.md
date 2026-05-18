@@ -155,6 +155,47 @@ in-toto, SLSA neighbourhood).
 - CI: new `go-verifier` job that runs `go test` and a conformance
   assertion.
 
+## Pre-v1.0 commitments
+
+The items below are not version-tied; they are commitments to land
+*before* any v1.0-line tag, regardless of which feature version
+crosses that boundary.
+
+- **External-review pass before v1.0.** Schedule a deliberate
+  external review of the wire format (`docs/aep-profile.md`),
+  threat model (`docs/threat-model.md`), and conformance contract
+  (`test-vectors/`) at least four weeks before tagging v1.0. The
+  first external review (issue
+  [#1](https://github.com/tyche-institute/eatf/issues/1) by
+  @flyoung588, 2026-05-18) surfaced four latent doc bugs in
+  roughly thirty minutes; the lesson is that a single attentive
+  reviewer with no context can find issues that multiple internal
+  read-throughs miss, while the spec surface is still small
+  enough (~10 KB) to be held in one head. Mechanism: open a
+  tracking issue 4 weeks pre-tag with an explicit in-scope /
+  out-of-scope checklist, invite 2–3 named reviewers from
+  adjacent communities, allocate a week for cleanup afterwards.
+
+- **Profile-URN agility — document the trigger conditions.**
+  `docs/design-rationale.md` §3 mentions a future profile-URN
+  bump (`urn:eatf:spec:aep:1.0 → 1.1 / 2.0`) without naming the
+  triggers. Before v1.0, write down: what change forces a minor
+  bump (e.g. additional classical suite), what change forces a
+  major bump (e.g. mandatory-suite replacement, canonicalisation
+  change), what the back-compat policy is for verifiers across
+  bumps. Currently it's tacit knowledge.
+
+- **Public-key history mirror diversification.** The reference
+  key-history mirror currently lives at
+  [`tyche-institute/eatf-trust-anchors`](https://github.com/tyche-institute/eatf-trust-anchors)
+  (a GitHub repo). That repo's README states the intent to add
+  additional mirrors at archive.org, Zenodo, and IPFS. Pick one
+  first additional mirror (suggested: Zenodo, because the deposit
+  process and the `urn:eatf:spec:key-mirror:1.0` format both
+  already exist on the project), schedule a v0.3 / v0.4 task,
+  and document the cross-mirror verification procedure for
+  relying parties.
+
 ## Parallel ongoing work (any version)
 
 - **`pre-commit` hook** — verify every `.aep` in a working tree
