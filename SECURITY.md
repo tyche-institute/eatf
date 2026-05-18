@@ -1,111 +1,188 @@
 # Security Policy
 
-## Supported versions
+## 🔒 Reporting a Vulnerability
 
-EATF is currently in a v0.x research-preview phase. Only the most
-recent published tag receives security updates. Once the project
-reaches v1.0, this section will be expanded with a formal support
-window.
+**Please do not report security vulnerabilities through public GitHub issues.**
 
-| Version | Supported |
-|---------|-----------|
-| 0.1.x   | yes (current) |
-| < 0.1   | no        |
+### Private Disclosure
 
-## Reporting a vulnerability
+If you discover a security vulnerability in the Aletheia AI Enterprise Agent Trust Framework, please report it privately:
 
-**Do not open a public issue, pull request, or discussion thread for
-security vulnerabilities.** Public disclosure before a fix is
-available can expose downstream operators to risk.
+**Email:** security@eatf.eu (preferred) or security@aletheia.ai (legacy alias)
+**PGP Key:** Published at `https://eatf.eu/.well-known/pgp.asc` (fingerprint also in `/.well-known/security.txt`); ask via the email above if you need a different channel.
+**security.txt:** [`https://eatf.eu/.well-known/security.txt`](https://eatf.eu/.well-known/security.txt) (also at `frontend/public/.well-known/security.txt`).
+**Full policy:** [`docs/legal/disclosure-policy.md`](docs/legal/disclosure-policy.md).
 
-Please report security issues by email to
-**security@tyche.institute**. PGP encryption is preferred but not
-required; the project PGP key fingerprint and a link to its public
-key will be published in this file once the project's key
-infrastructure is in place. Until then, plain-text email is
-acceptable.
+### What to Include
 
-Include in your report:
+Please include as much of the following information as possible:
 
-1. A description of the vulnerability and its potential impact.
-2. Steps to reproduce, with a minimal proof-of-concept if possible.
-3. The version (tag or commit hash) of EATF that you tested against.
-4. Any suggested mitigations or fixes.
-5. Whether you intend to publish your own write-up, and on what
-   timeline.
+- **Type of vulnerability** (e.g., crypto weakness, auth bypass, injection)
+- **Full path** of the source file(s) related to the vulnerability
+- **Location** of the affected source code (tag/branch/commit or direct URL)
+- **Step-by-step instructions** to reproduce the issue
+- **Proof-of-concept or exploit code** (if possible)
+- **Impact** of the issue (what an attacker could do)
+- **Suggested fix** (if you have one)
 
-You should receive an acknowledgement within **72 hours** and a
-substantive triage response (severity assessment, planned fix
-timeline) within **10 working days**. If you do not, please follow up
-on the same thread.
+### Response Timeline (SLA)
 
-**No bug bounty.** EATF does not offer monetary rewards for
-vulnerability reports. We will credit reporters publicly with their
-consent (see "Hall of fame" below) and we treat coordinated disclosure
-as a contribution worth acknowledging, but we cannot offer cash. If
-that affects your decision to report, we still encourage you to
-report.
+Phase 1 step 1.8: these are commitments, not aspirations. Misses are themselves a security event and will be disclosed publicly in the next quarterly transparency note.
 
-**CVE assignment.** Where a vulnerability has impact beyond this
-project (for example, in an upstream library), we will request a CVE
-ID via MITRE's CVE Numbering Authority program and credit the
-reporter on the resulting advisory.
+- **Acknowledgment of receipt:** within **72 hours** (best effort within 24h on business days).
+- **Initial severity assessment:** within **7 days**.
+- **Coordinated disclosure deadline:** **90 days** from acknowledgment, extendable by mutual agreement when a fix is in-flight.
+- **Public disclosure:** after a fix is deployed and verified, with a security advisory on GitHub and a CVE if applicable.
+- **Bug bounty:** not active yet — see Phase 2.x in the roadmap. We will, however, publicly credit researchers who follow this policy.
 
-## Disclosure policy
+---
 
-We follow a coordinated disclosure model:
+## 🛡️ Security Measures
 
-1. Reporter contacts security@tyche.institute privately.
-2. Maintainers triage and confirm the vulnerability.
-3. A fix is developed in a private branch.
-4. A coordinated release date is agreed with the reporter, typically
-   **90 days** from initial report, shorter if the issue is being
-   actively exploited.
-5. On the release date: the fix is published, an advisory is issued,
-   and the reporter is credited (with their consent).
+EATF should be read here as an **early-stage, pilot-oriented trust platform**
+with explicit demo and research surfaces. This document describes the current
+security posture of the codebase and deployment paths; it is **not** a claim
+of certification, HSM-backed production readiness, or complete operational
+hardening across every surface in the repository.
 
-We will not pursue legal action against researchers who:
+### Cryptographic Integrity
 
-- Make a good-faith effort to avoid privacy violations, destruction
-  of data, or interruption or degradation of services.
-- Only interact with accounts or systems they own or have explicit
-  permission to test.
-- Disclose responsibly and give us reasonable time to fix issues
-  before public disclosure.
+EATF uses **post-quantum cryptography** (ML-DSA) alongside RSA for long-term signature verification:
 
-## Scope
+- **Audit trail:** Hash-chained events with dual signatures (PQC + RSA)
+- **Evidence packages:** Cryptographically signed `.aep` files
+- **Delegation chains:** Signature verification at each level
+- **Timestamps:** RFC 3161 timestamping (QTSP integration)
 
-In scope:
+### Key Management
 
-- The EATF reference implementation in this repository (`lib/`,
-  `cli/`, `schemas/`, `examples/`).
-- The AEP wire-format specification in `docs/aep-profile.md`.
-- The conformance test vectors in `test-vectors/`.
+- **PQC keys:** Configurable via `AI_ALETHEIA_PQC_KEY_PATH`; local and demo setups may use filesystem-backed keys
+- **HSM support:** Planned for production (QTSP-ready)
+- **Key rotation:** Not yet automated (manual process documented)
+- **Environment secrets:** Never committed to Git (`.gitignore` enforced)
 
-Out of scope:
+### Authentication & Authorization
 
-- Third-party reference deployments operating EATF (h2oatlas.ee,
-  matx.ee, eaudit.ee, and similar). Report deployment-specific
-  issues to the deployment operator directly.
-- Issues in upstream dependencies (Bouncy Castle, jose, etc.). Those
-  should be reported to the upstream project; we will track upstream
-  advisories and ship updated pins as needed.
-- Denial-of-service issues that require an unrealistic resource
-  envelope (e.g. multi-gigabyte input files); please open a normal
-  performance-issue ticket instead.
+- **OAuth2/OIDC:** Google OAuth for user authentication
+- **NextAuth.js:** Session management
+- **Multi-tenancy:** Organization-based isolation
+- **RBAC:** Role-based access control centered on tenant-scoped operations
 
-## Trust anchors and key compromise
+### API Security
 
-If a private signing key used by a reference deployment is suspected
-to be compromised, contact the deployment operator immediately and CC
-security@tyche.institute. The EATF threat model assumes that operators
-maintain their own key custody; key-management compromise on an
-operator side is a deployment incident, not an EATF library
-vulnerability, but we will help coordinate disclosure if the same
-class of issue could affect other operators.
+- **JWT tokens:** Signed with `AI_ALETHEIA_JWT_SECRET`
+- **BFF mint key:** `AI_ALETHEIA_BFF_MINT_KEY` (same value on Next.js server and backend) protects `GET /api/auth/session/bff` used by the Next proxy to mint API JWTs by `userId`. Treat like a shared service secret; use a strong random value in production (`docs/developers/en/bff-api-jwt-mint.md`).
+- **Authenticated API:** Most `/api/**` routes require `Authorization: Bearer <JWT>` (see `SecurityConfig`). Exceptions: `/api/auth/**`, `/api/public/**` (e.g. invite signup when configured).
+- **OAuth provisioning:** `AI_ALETHEIA_OAUTH_AUTO_PROVISION` — when `false`, OAuth does not create new users (existing accounts only).
+- **Invite signup:** `AI_ALETHEIA_INVITE_SECRET` — when set, enables `POST /api/public/register-invite` / `/auth/register` for VIEWER accounts in the default tenant.
+- **Rate limiting:** Per-IP token bucket on `/api/**` (Bucket4j), configurable via `ai.aletheia.ratelimit.*` (disabled in `application-test.properties`)
+- **CORS:** Configured for frontend/backend separation
+- **Input validation:** Spring Boot validators + custom checks
 
-## Hall of fame
+### Database Security
 
-Researchers who report valid vulnerabilities and consent to public
-acknowledgement will be listed in `docs/security-acknowledgements.md`
-(file added once the first valid report is received).
+- **PostgreSQL:** Production database (not SQLite)
+- **Connection encryption:** SSL/TLS recommended
+- **Parameterized queries:** JPA/Hibernate (SQL injection protection)
+- **Multi-tenancy isolation:** Row-level security via organization_id
+
+### Infrastructure
+
+- **Canonical public architecture:** Cloudflare-hosted frontend plus Hetzner-hosted backend (see `docs/cloudflare-architecture.md`)
+- **Legacy/secondary ops paths:** Ansible, manual runbooks, and local Docker remain available for development or recovery, but they are not the primary public production contract
+- **Environment variables:** Secrets managed via env files or deployment automation, depending on the path
+- **Docker:** Supported for local/containerized workflows; not the canonical public deployment story
+
+---
+
+## 🚨 Known Issues & Mitigations
+
+### Current Limitations
+
+1. **PQC key rotation:** Not automated (manual process required)
+2. **Rate limiting:** Implemented at the application layer for `/api/**`, but not yet backed by a broader edge/gateway abuse-control program
+3. **HSM integration:** Not yet available (keys stored on filesystem)
+4. **Audit log pruning:** No automated archival (disk can fill up)
+5. **Multi-region:** Not supported (single deployment only)
+
+### Recommended Mitigations (Production)
+
+- [ ] Add edge/gateway rate limiting and abuse controls beyond the current application-layer limiter
+- [ ] Integrate HSM for PQC key storage
+- [ ] Set up automated audit log archival (S3, cold storage)
+- [ ] Enable PostgreSQL connection encryption
+- [ ] Configure firewall rules (only allow frontend → backend, backend → DB)
+- [ ] Set up monitoring and alerting (Prometheus, Grafana)
+- [ ] Regular security audits and penetration testing
+
+---
+
+## 🔐 Security Best Practices (For Developers)
+
+### Never Commit Secrets
+
+**Forbidden in Git:**
+- API keys (OpenAI, Google OAuth, etc.)
+- JWT secrets
+- Database passwords
+- PQC private keys
+- `.env` files with real credentials
+
+**Use `.gitignore` and environment variables.**
+
+### Code Review Requirements
+
+**Security-critical changes require review:**
+- Cryptographic operations (`/backend/src/main/java/ai/aletheia/crypto/`)
+- Authentication/authorization logic
+- Database migrations
+- Deployment scripts
+- API endpoints handling sensitive data
+
+**See `CODEOWNERS` for required reviewers.**
+
+### Dependency Security
+
+- **Dependabot:** Enabled for automatic vulnerability alerts
+- **Regular updates:** Check for CVEs in Maven/npm dependencies
+- **Lock files:** Use `package-lock.json` and `pom.xml` checksums
+
+### Testing Security
+
+- **No real keys in tests:** Use mocked keys or test fixtures
+- **No production data:** Use synthetic data only
+- **Clean up:** Delete test evidence packages after tests
+
+---
+
+## 🏛️ Compliance & Standards
+
+EATF is designed as an implementation and evidence layer relevant to:
+
+- **EU AI Act** (High-risk AI systems)
+- **GDPR** (Data privacy)
+- **ISO 27001** (Information security)
+- **SOC 2** (Service organization controls)
+- **QTSP standards** (Qualified Trust Service Providers)
+
+See `docs/legal/` for compliance documentation.
+
+---
+
+## 📚 Security Documentation
+
+- **Architecture:** [docs/diagrams/architecture.md](docs/diagrams/architecture.md)
+- **Crypto reference:** [docs/developers/en/crypto-reference.md](docs/developers/en/crypto-reference.md)
+- **Trust model:** [docs/users/en/trust-model.md](docs/users/en/trust-model.md)
+- **Deployment:** [deploy/README.md](deploy/README.md)
+
+---
+
+## 🙏 Acknowledgments
+
+We appreciate responsible disclosure and will acknowledge security researchers who help improve EATF security.
+
+---
+
+**Last updated:** 2026-05-12 (Phase 1 step 1.8 — formalized disclosure SLAs, added security.txt + disclosure-policy.md references, updated contact to security@eatf.eu).
+**Contact:** security@eatf.eu (legacy alias: security@aletheia.ai)

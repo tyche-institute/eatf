@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eatf.eu/specs/kratt-manifest-0.1.json",
+  "title": "Kratt Manifest",
+  "description": "Open spec — Aletheia Accountability Kit extension fields for an EATF agent that wants to participate in the Estonian Bürokratt 2026 governance pattern. Inherits all base EATF agent manifest fields.",
+  "type": "object",
+  "required": ["agentId", "displayName"],
+  "properties": {
+    "agentId": {
+      "type": "string",
+      "pattern": "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "Stable URN-UUID identifying the agent across redeploys."
+    },
+    "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "description": { "type": "string", "maxLength": 1000 },
+    "kratt_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{1,63}$",
+      "description": "Short stable handle. Recommended format KRA-YYYY-NNNN for public-sector Kratts."
+    },
+    "kratt_owner": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "kratt_purpose": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "risk_class": { "enum": ["LOW", "MEDIUM", "HIGH"] },
+    "human_review_required": { "type": "boolean" },
+    "tsa_url": { "type": "string", "format": "uri" },
+    "evidence_retention_years": { "type": "integer", "minimum": 1, "maximum": 50 },
+    "well_known_url": { "type": "string", "format": "uri" },
+    "kratid_listing_url": { "type": "string", "format": "uri" },
+    "agentType": { "type": "string" },
+    "eidasLevel": { "enum": ["none", "advanced", "qualified"] },
+    "signatureAlgorithm": { "enum": ["RSA", "ML_DSA", "HYBRID"] },
+    "primaryJurisdiction": { "type": "string", "minLength": 2, "maxLength": 4 },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "anyOf": [
+          { "required": ["kratt_id"] },
+          { "required": ["kratt_owner"] },
+          { "required": ["kratt_purpose"] },
+          { "required": ["risk_class"] },
+          { "required": ["human_review_required"] },
+          { "required": ["tsa_url"] },
+          { "required": ["evidence_retention_years"] },
+          { "required": ["well_known_url"] },
+          { "required": ["kratid_listing_url"] }
+        ]
+      },
+      "then": {
+        "description": "Kratt extension: any kratt_* field present requires the full set.",
+        "required": [
+          "kratt_id",
+          "kratt_owner",
+          "kratt_purpose",
+          "risk_class",
+          "human_review_required",
+          "tsa_url",
+          "evidence_retention_years",
+          "well_known_url"
+        ]
+      }
+    },
+    {
+      "if": { "properties": { "risk_class": { "const": "HIGH" } }, "required": ["risk_class"] },
+      "then": { "properties": { "human_review_required": { "const": true } } }
+    }
+  ]
+}
