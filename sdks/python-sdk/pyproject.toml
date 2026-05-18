@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aletheia-ai"
+version = "0.5.0.dev0"
+description = "Python SDK for Aletheia AI Agent Trust Framework"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Aletheia AI", email = "info@aletheia.ai"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "httpx>=0.25.0",
+    "pydantic>=2.0.0",
+    "python-dateutil>=2.8.0",
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+verify = [
+    # Required only by aletheia.evidence.EvidenceAPI.verify (offline .aep
+    # package verification). Other SDK calls work without it. Loaded lazily
+    # so importing aletheia stays cheap and dependency-free.
+    "cryptography>=41.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "cryptography>=41.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/aletheia-ai/python-sdk"
+Documentation = "https://docs.aletheia.ai"
+Repository = "https://github.com/aletheia-ai/python-sdk"
+"Bug Tracker" = "https://github.com/aletheia-ai/python-sdk/issues"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["-v"]
