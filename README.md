@@ -1,5 +1,9 @@
 # EATF — Agent Trust Framework
 
+[![DOI (software, v0.2.1)](https://zenodo.org/badge/DOI/10.5281/zenodo.20273730.svg)](https://doi.org/10.5281/zenodo.20273730)
+[![Companion paper — substrate choices](https://img.shields.io/badge/companion%20paper-substrate%20choices-blue)](https://doi.org/10.5281/zenodo.20273726)
+[![License — Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-green)](./LICENSE)
+
 EATF is an open-source reference implementation and specification for
 cryptographically verifiable AI agent self-attestation, maintained by
 Tyche Institute (Estonian non-profit research entity, registration in
@@ -44,6 +48,28 @@ assessments under any applicable regulation.
 ## License
 
 Apache License 2.0. See [LICENSE](./LICENSE).
+
+## Cite this software
+
+The v0.2.1 release is archived on Zenodo: [`10.5281/zenodo.20273730`](https://doi.org/10.5281/zenodo.20273730).
+
+```bibtex
+@software{eatf_v021_2026,
+  author       = {Sokolov, Anton},
+  title        = {{EATF — Agent Evidence Package v0.1: reference
+                   implementation with two independent verifiers
+                   (TypeScript and Python)}},
+  version      = {0.2.1},
+  publisher    = {Tyche Institute},
+  doi          = {10.5281/zenodo.20273730},
+  url          = {https://github.com/tyche-institute/eatf},
+  year         = {2026}
+}
+```
+
+GitHub's "Cite this repository" button reads [`CITATION.cff`](./CITATION.cff) for canonical machine-readable citation metadata.
+
+For the design rationale behind EATF's substrate choice, see the companion paper [*"What 'Self-Attestation' Actually Proves: Substrate Choices for AI Agent Attestation"*](https://doi.org/10.5281/zenodo.20273726) (DOI `10.5281/zenodo.20273726`).
 
 ## Quick start
 
