@@ -1,0 +1,43 @@
+{
+  "name": "@eatf/cli",
+  "version": "0.1.0",
+  "description": "Command-line tool for the EATF (Enterprise Agent Trust Framework) registry. Idempotently syncs an agent.yaml manifest into the EATF backend via PUT /api/v1/agents/{agentId}.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "src/lib.js",
+  "exports": {
+    ".": "./src/lib.js"
+  },
+  "bin": {
+    "eatf": "./bin/eatf.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "js-yaml": "^4.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tyche-institute/eatf.git",
+    "directory": "sdks/eatf-cli"
+  },
+  "keywords": [
+    "eatf",
+    "ai-act",
+    "agent",
+    "registry",
+    "compliance",
+    "cli"
+  ]
+}

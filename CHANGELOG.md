@@ -1,378 +1,186 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable user-facing and architecture-level changes to **Aletheia AI** are tracked here, grouped by sprint.
+Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semantic versioning is used for release tags.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Sprints are tracked as GitHub Milestones in the source repository; sub-issues live on the maintainer's delivery board.
 
-The AEP wire-format profile is versioned separately under its own URN
-(`urn:eatf:spec:aep:<major>.<minor>`). A backwards-incompatible
-change to the wire format bumps the AEP profile major; a
-backwards-incompatible change to the library / CLI surface bumps the
-library major.
+---
 
-## [Unreleased]
+## [Unreleased] — Tyche Institute rebrand
 
-## [0.2.1] — 2026-05-17
+Site rebranding and risk-surface cleanup for `eatf.eu`. The site now
+presents the EATF / Aletheia AI project as open-source research
+infrastructure maintained by **Tyche Institute** (Estonian non-profit,
+registration in progress), not as a commercial product.
 
-Closes the point-release follow-up promised in v0.2.0's notes:
-the Python verifier now performs the same TSA chain-to-root pin
-check as the TypeScript reference, and ships the same three
-pinned DigiCert public roots.
+### Why
 
-The single-step pin rule is unchanged from the TS reference: the
-TSA signing certificate's *issuer DN* must equal one of the
-pinned roots' *subject DN*. This is not full RFC 5280 path
-validation; it matches what `verifyTsaTrust` in
-`lib/src/tsa.ts` does today, byte-for-byte. Empty trust list
-means the check is skipped; tokens without an embedded signing
-cert (which includes all current v0.1 conformance vectors)
-return `tsa_trusted=None`.
+Commercial framing on the public site created legal risk under a
+non-compete clause in the maintainer's employment contract with an
+eIDAS QTSP. A non-profit institutional wrapper (Estonian MTÜ, "Tyche
+Institute") is being established to formally own the project; the
+public site needs to match that positioning before any
+commercial-flavoured copy reaches an employer, regulator, partner, or
+journalist.
 
-The conformance contract over the existing 11-vector set is
-unchanged (4 verified, 7 rejected, 0 contract mismatches).
+### Changed (brand and entity)
 
-### Added
-- **`lib-python/eatf_verifier/tsa_trust_list.py`** — the three
-  pinned DigiCert public root PEMs (Global Root CA, Assured ID
-  Root CA, Trusted Root G4) plus their canonical SHA-256
-  fingerprints. Verbatim ports of the constants in
-  `lib/src/tsa-trust-list.ts`.
-- **`tsa.verify_tsa_trust()`** + **`TsaTrustResult`** — Python
-  port of `verifyTsaTrust` / `TsaTrustResult`.
-- **`tsa.TsaCheck.embedded_cert_count`** — new field used by the
-  trust check to distinguish "no embedded cert" from "trust check
-  failed".
-- **`tests/test_trust_list.py`** — fingerprint sanity tests
-  mirroring `lib/test/tsa-trust-list.test.ts`. An accidental byte
-  edit in any pinned PEM fails immediately.
-- **`tests/test_tsa_trust.py`** — unit tests for the four return
-  cases of `verify_tsa_trust` (trusted, untrusted, no embedded
-  cert, empty trust list).
-- **`DEFAULT_TSA_TRUST_LIST`** re-exported from
-  `eatf_verifier` for caller convenience.
+- **Operator entity:** introduced **Tyche Institute** (Estonian non-profit,
+  registration in progress) as the operator of the EATF reference
+  implementation.
+- **Project name:** unchanged. Continues as **EATF** (Agent Trust
+  Framework, also referred to as Aletheia AI). The "E" is retained for
+  brand continuity but is no longer expanded as "Enterprise Agent Trust
+  Framework" anywhere on the site — the expansion is now "Agent Trust
+  Framework".
+- **Domain:** unchanged (`eatf.eu`).
+- **Logo wordmark:** removed "Enterprise" from the SVG and React
+  components; the wordmark now reads "Agent / Trust Framework".
+- **Site title and metadata:** rewritten to lead with the open-source
+  research positioning and Tyche Institute attribution; added
+  Open Graph and Twitter card tags.
 
-### Changed
-- `verify(...)` now applies `DEFAULT_TSA_TRUST_LIST` when the
-  caller doesn't pass a custom one (matches TS reference). The
-  report gains one new line: `TSA chain-to-root: trusted=...`.
-  No vector's verify-true/false outcome changes — the trust
-  check is informational only, exactly as in the TS reference.
-- `VerifyOptions.tsa_trust_list` docstring updated to document
-  the fall-through behaviour.
+### Changed (page-level cleanup)
 
-## [0.2.0] — 2026-05-17
-
-Second-implementation milestone. Adds a complete Python verifier
-(`lib-python/`) as an independent fresh port of the canonical
-TypeScript reference. Both implementations share the same
-`test-vectors/` set and produce the same `verify=true | false`
-contract for every vector.
-
-This release is what proves the v0.1 spec is implementable from
-documentation alone: the Python port shares zero code with the TS
-reference and was written against `docs/aep-profile.md` plus the
-shared vectors only. The conformance contract holds across both.
-
-The library API and CLI surface of the TypeScript reference are
-unchanged. No wire-format change. The minor bump reflects the
-**second-implementation** milestone in `ROADMAP.md`, not a
-breaking change.
-
-### Added
-- **`lib-python/`** — full Python verifier package, published as
-  `eatf-verifier` on PyPI (planned). Modules mirror the TS layout
-  (`canonical.py`, `hash.py`, `rsa.py`, `tsa.py`, `mldsa.py`,
-  `overt.py`, `verifier.py`, `cli.py`). Public API: `from
-  eatf_verifier import verify, VerifyOptions, VerifyResult`.
-- **`eatf-verify-py` CLI** — `--conformance`, `--batch`, `--json`,
-  single-file modes; exit codes match the Node CLI (`0` all valid,
-  `1` one or more failures, `2` bad usage).
-- **`lib-python/tests/test_conformance.py`** — pytest suite that
-  walks `test-vectors/` and asserts every vector matches its
-  declared `verify-expected.txt`.
-- **CI `python-verifier` job** — runs the Python conformance set
-  on Python 3.11 / 3.12 / 3.13; fails if either pytest or the CLI
-  `--conformance` exit code drifts from the TS reference.
-- **`rsa.py: verify_rsa_digest_info`** — Java-reference
-  compatibility path. Strips PKCS#1 v1.5 padding and compares the
-  trailing 32-byte digest, exactly as `verifyRsaDigestInfo` in
-  `lib/src/rsa.ts`. Required because the Java backend signs
-  DigestInfo via BouncyCastle, which emits the SHA-256
-  AlgorithmIdentifier without NULL parameters; strict ASN.1
-  parsers (including `pyca/cryptography.verify(..., PKCS1v15(),
-  SHA256())`) then reject the wire signature even though the
-  underlying RSA operation succeeds.
-
-### Notes
-- Cryptography stack: `pyca/cryptography` for RSA + X.509,
-  `asn1crypto` for CMS / RFC 3161 parsing, `oqs-python` (optional
-  `[pqc]` extra) for ML-DSA-65.
-- TSA chain-to-root validation is not yet in the Python port; the
-  TS reference's `DEFAULT_TSA_TRUST_LIST` pin will land in a 0.2.x
-  point release. CLI accepts `--tsa-trust-list` today for parity.
-
-## [0.1.5] — 2026-05-17
-
-Documentation and schema completeness. Fills in every `docs/`
-stub that has been carrying a placeholder since v0.1.0, and adds
-a second JSON Schema covering the OVERT receipt that the verifier
-already validates structurally.
-
-### Added
-- **`schemas/overt-receipt-v1.schema.json`** — JSON Schema
-  2020-12 for the `overt_receipt.json` entry. Constrains the
-  receipt's shape; cross-document consistency between receipt and
-  manifest is enforced by the verifier itself
-  (`lib/src/overt.ts`). Validated against all 11 conformance
-  vectors as part of CI.
-- **`docs/architecture.md`** (~280 lines, previously stub) —
-  full layered overview, per-layer responsibilities, mapping to
-  `lib/src/*` modules, trust boundaries, cryptographic-primitives
-  summary table.
-- **`docs/threat-model.md`** (~180 lines) — focused STRIDE
-  analysis mapped to the eight verifier checks, eleven-row
-  threat table, residual-risks section, future-hardening list.
-- **`docs/attestation-profile.md`** (~190 lines) — W3C VC 2.0
-  profile for the planned `attestations/agent.vc.json` entry,
-  private-CA-default + external-issuer-bound modes, cross-document
-  consistency rules, explicit non-implementation marker for v0.1.
-- **`docs/glossary.md`** (~180 lines) — EATF-specific terms,
-  standards-relationship labels (IMPLEMENTED / ALIGNED /
-  REFERENCED / ADDRESSED), implementation-maturity labels,
-  cryptographic-primitives definitions, regulatory references
-  (EU AI Act, eIDAS, GDPR).
-- **`docs/design-rationale.md`** (~230 lines) — the *why* behind
-  each major design decision: offline verification, hybrid
-  signing, RSASSA-PKCS1-v1_5 default, ML-DSA-65 selection, JCS
-  canonicalisation, RFC 3161 timestamps, private CA for agents,
-  open specification, DCO over CLA, no hosted registry.
-
-### Changed
-- **CI `schema-validate` job** now compiles both schemas (AEP
-  metadata + OVERT receipt) and validates the corresponding
-  document extracted from every conformance vector. Catches any
-  drift between the schemas and the runtime format.
-
-## [0.1.4] — 2026-05-17
-
-Failure-mode coverage. Six new invalid conformance vectors that
-exercise the six classes of tamper a v0.1-conformant verifier
-must catch.
-
-### Added
-- **`test-vectors/invalid/tampered-canonical-bin/`** — one byte
-  flipped in `canonical.bin`; hash chain mismatch.
-- **`test-vectors/invalid/tampered-metadata/`** —
-  `metadata.policy_decision` swapped; OVERT receipt cross-check
-  fails.
-- **`test-vectors/invalid/bad-signature-classical/`** — one byte
-  flipped inside the base64-decoded `signature.sig`;
-  RSASSA-PKCS1-v1_5 verification fails.
-- **`test-vectors/invalid/untrusted-issuer/`** — `public_key.pem`
-  swapped for a freshly-generated unrelated RSA-4096 public key;
-  the original signature does not verify against the swap.
-- **`test-vectors/invalid/missing-canonical-bin/`** — required
-  envelope entry deleted; verifier fails the envelope-integrity
-  check before any cryptographic step.
-- **`test-vectors/invalid/bad-timestamp/`** — three bytes flipped
-  inside `timestamp.tsr`; pkijs cannot extract a usable TimeStampToken,
-  verifier reports "timestamp.tsr missing or empty".
-- **`scripts/generate-invalid-vectors.mjs`** — deterministic
-  build-time generator that produces all six tampered packages
-  from `valid/minimal-roundtrip/package.aep`. Re-running produces
-  byte-identical output. Inspect this script to audit exactly
-  what each tamper does.
-- **`scripts/package.json`** — minimal manifest pinning `fflate`
-  so the generator runs from a clean clone without depending on
-  `lib/node_modules`.
-- **`test-vectors/README.md`** — table of all eleven vectors
-  (4 valid + 7 invalid), expected output of a full conformance run.
-
-### Changed
-- Conformance contract now requires verifiers to handle six new
-  failure modes correctly. Output of
-  `eatf-verify --conformance test-vectors/` goes from
-  `4 verified, 1 rejected, 0 contract mismatches` →
-  `4 verified, 7 rejected, 0 contract mismatches`.
-
-### Coming next
-- `tyche-institute/verify-aep-action@v1` — a sibling repository
-  shipping a GitHub composite Action that wraps `eatf-verify`,
-  for downstream pipelines that want to assert every `.aep` they
-  produce verifies cleanly before merging.
-- v0.1.5 — OVERT receipt JSON Schema + fill in the remaining
-  `docs/` stubs.
-
-## [0.1.3] — 2026-05-15
-
-First release with a runnable offline signer. Closes the round-trip
-loop: external parties can now both verify and produce `.aep`
-packages from the public repository alone.
-
-### Added
-- **`lib/src/signer.ts`** — `sign()` function added to `@eatf/verifier`.
-  Takes a payload + RSA keypair + metadata + OVERT scope + RFC 3161
-  timestamp token, returns a v0.1-conformant `.aep` ZIP. Uses the
-  Java-form canonical bytes (`canonical.bin == response.txt`) and
-  RSASSA-PKCS1-v1_5 over SHA-256, matching the verifier's
-  expectation exactly.
-- **`cli/eatf-sign/`** — `@eatf/sign-cli` 0.1.3: thin Node CLI
-  wrapper over `sign()`. Supports `--gen-rsa` for one-off dev
-  keypair generation, and a `--timestamp <path.aep>:timestamp.tsr`
-  shorthand for reusing an RFC 3161 token from an existing package
-  (the offline-by-default option). No network calls; the signer
-  does not contact any TSA.
-- **`test-vectors/keys/dev-rsa-4096.{key,pem}`** — public-and-
-  private development RSA keypair, checked into the repo
-  intentionally so that anyone can regenerate the round-trip
-  vector and confirm byte-equality. README explicitly marks the
-  key as a known-bad anchor for production verifiers.
-- **`test-vectors/valid/minimal-roundtrip/`** — produced by
-  `eatf-sign` from `dev-rsa-4096.key`, verifies clean with
-  `eatf-verify`. Reuses the RFC 3161 token from
-  `valid-overt-profile/` (verifier accepts mismatched-imprint
-  timestamps as long as the SignerInfo signature still verifies
-  against the embedded certificate).
-- **CI** — new `roundtrip` job. Builds the verifier, builds the
-  signer CLI, signs a fixture payload with the dev key, runs the
-  verifier on the result, asserts `verify=true`. Catches any
-  regression that breaks signer↔verifier agreement.
-
-### Changed
-- **`docs/aep-profile.md`** — wire-format spec now matches the
-  verifier and signer reality:
-  - Classical suite identified as RSASSA-PKCS1-v1_5 + SHA-256 (the
-    v0.1.2 doc incorrectly said RSA-PSS).
-  - Post-quantum signature entry renamed to `signature_pqc.sig`
-    (paired with `pqc_public_key.pem`) — matches the verifier
-    code. The v0.1.2 doc incorrectly said `signature.mldsa`.
-  - Timestamp section notes that legacy packages with mismatched
-    imprints are still accepted as long as the SignerInfo signature
-    verifies against its embedded certificate.
-- **`lib/package.json`** version bumped to `0.1.3`. The
-  `@eatf/verifier` package now exports both `verify` and `sign`.
-
-### Not yet in this release
-- ML-DSA-65 signing in `eatf-sign` (verifier already handles
-  packages that carry it; signer support lands next).
-- Six tampered failure-mode vectors (v0.1.4).
-- OVERT receipt JSON Schema (v0.1.5).
-- Expanded `docs/` spec pages (v0.1.5).
-
-## [0.1.2] — 2026-05-15
-
-Aligns the v0.1 wire-format documentation and schemas with the
-actual AEP layout used by the runnable verifier.
-
-### Added
-- **`cli/eatf-inspect/`** — `@eatf/inspect-cli` 0.1.2: pretty-prints
-  the structure of an `.aep` package (envelope entries, parsed
-  `metadata.json`, parsed `overt_receipt.json`) without verifying
-  authenticity. Useful for debugging packaging bugs and inspecting
-  received packages before invoking `eatf-verify`. Implemented as a
-  thin wrapper around `fflate`.
-- **CI** — `schema-validate` job now extracts `metadata.json` from
-  every `test-vectors/*/*/package.aep` via `unzip -p` and validates
-  it against `schemas/aep-v1.schema.json`. This catches metadata
-  drift between the schema and the runtime format.
-
-### Changed
-- **`docs/aep-profile.md`** — full v0.1 wire-format specification.
-  Replaces the v0.1.0 stub. Documents the eight ZIP entries
-  (`canonical.bin`, `hash.sha256`, `metadata.json`,
-  `overt_receipt.json`, `public_key.pem`, `response.txt`,
-  `signature.sig`, `timestamp.tsr`), the three signature suites
-  (`urn:eatf:sig:rsa4096`, `urn:eatf:sig:ecdsa-p256`,
-  `urn:eatf:sig:mldsa-65`), and the seven-step verification pipeline.
-- **`schemas/aep-v1.schema.json`** — rewritten to describe
-  `metadata.json` (the actual content of the AEP that v0.1
-  attestations carry), replacing the aspirational manifest schema
-  shipped in v0.1.0. The schema now validates against every real
-  test-vector metadata file in CI.
-
-## [0.1.1] — 2026-05-15
-
-First release with a runnable offline verifier.
-
-### Added
-- **`lib/`** — `@eatf/verifier` 0.1.1 package: full TypeScript
-  reference implementation of the EATF offline verifier. Runs in
-  Node 20+ and in the browser via Web Crypto.
-  - `src/canonical.ts` — RFC 8785 JCS canonicalisation.
-  - `src/hash.ts` — SHA-256 over Web Crypto / Node `crypto`.
-  - `src/rsa.ts` — RSA-PSS / PKCS#1 v1.5 verification, CMS parsing.
-  - `src/mldsa.ts` — ML-DSA-65 (NIST FIPS 204) verification via
-    `@noble/post-quantum`.
-  - `src/tsa.ts` and `src/tsa-trust-list.ts` — RFC 3161 TimeStampResp
-    parsing and TSA trust-anchor management.
-  - `src/overt.ts` — OVERT 1.0 receipt validation.
-  - `src/verifier.ts` — orchestrates the eight-check verification
-    pipeline and returns a structured `VerifyResult`.
-  - `src/index.ts` (Node entry) and `src/browser.ts` (Web-Crypto-only
-    entry).
-- **`cli/eatf-verify/`** — `@eatf/verify-cli` 0.1.1: thin Node CLI
-  wrapper over `@eatf/verifier`. Supports single-file verification,
-  `--batch <dir>`, `--conformance <vectors-root>`, JSON output, and
-  pinned TSA trust lists. No network calls; no API keys.
-- **`test-vectors/`** — four real conformance vectors backed by
-  `.aep` files:
-  - `valid/valid-overt-profile/` — full happy-path, OVERT foundational scope.
-  - `valid/mcp-tools-call-valid/` — OVERT `agentic-extended:mcp-tools-call`, policy `allow`.
-  - `valid/mcp-tools-call-denied-policy/` — same scope, policy `deny`; the AEP is authentic, the call was rejected.
-  - `invalid/tampered-overt-receipt/` — post-sign hash-chain tamper.
-
-### Changed
-- **CI** — `schema-validate` job now only compiles the schema (sanity
-  check), since the per-vector schema validation of stub manifests no
-  longer applies. New `verifier-test` job runs `npm install`,
-  `npm run build`, and `vitest` against the verifier. New
-  `conformance` job runs the real `eatf-verify --conformance` against
-  the four vectors. `hygiene` job unchanged.
-- **`docs/aep-profile.md`** previously referenced retired TSP-voice
-  artefacts and an internal Java path; updated to point at the
-  Framework Operations Statement and to state EATF's eIDAS Article
-  3(16) non-trust-service positioning.
+- **/landing**: hero rewritten around the open-source / institutional
+  framing; commercial CTAs removed.
+- **/about**: rewritten to lead with Tyche Institute as the entity, EATF
+  as its project; added "The name" section explaining the Tyche / Τύχη
+  pronunciation and cryptographic-randomness motif.
+- **/architecture**: title changed to "Aletheia AI / EATF — Architecture";
+  Layer 1 status labels switched from PRODUCTION to the new
+  IMPLEMENTED / ALIGNED / REFERENCED / ADDRESSED scheme; status legend
+  expanded with descriptions; clarifying note added that PRODUCTION
+  refers to reference deployments, not external certification.
+- **/compliance**: retitled "EU AI Act regulatory mapping"; disclaimer
+  added at the top; pricing and "Request a pilot" CTAs removed; schema.org
+  publisher / author switched to `ResearchOrganization` (Tyche Institute).
+- **/trust**: research disclaimer banner added.
+- **/legal/[slug]**: every legal page now renders an institutional
+  research-document disclaimer banner above the markdown content. Source
+  files (`docs/legal/TSPS.md`, `docs/legal/etsi-en-319-401-self-assessment.md`,
+  `docs/legal/termination-plan.md`, `docs/legal/threat-model.md`,
+  `docs/legal/disclosure-policy.md`, `docs/specs/aep-profile-v1.md`) carry
+  matching operator-update notes naming Tyche Institute. Substantive
+  controls and findings are unchanged.
+- **/developers**: reframed as "Researcher access & technical
+  evaluation"; commercial language removed.
+- **/auth/signin** and **/welcome**: rewritten copy emphasising research
+  access; "Open workspace" CTA replaced with "Researcher access".
+- **/use-cases** and **/demo/use-cases**: the "Enterprise HR" industry
+  category renamed to "HR"; framed as reference scenarios, not customer
+  deployments.
+- **/roi**: reframed as a research planning estimator; the "Enterprise"
+  company-size tier renamed to "Very large".
+- **/privacy** and **/terms**: rewritten introductions to name Tyche
+  Institute as the operator and to drop the "Enterprise" expansion.
 
 ### Removed
-- `lib/canonicalization/`, `lib/signer/`, `lib/verifier/`,
-  `lib/timestamping/`, `lib/package/` placeholder subdirectories —
-  replaced by the real `lib/src/*.ts` modules.
-- `cli/eatf-sign/`, `cli/eatf-inspect/` placeholder directories — the
-  signing CLI lands in a later 0.1.x; the inspect CLI is folded into
-  `eatf-verify --json` for now.
-- `cli/eatf-verify/eatf-verify` Bash stub — superseded by the real
-  Node CLI under `cli/eatf-verify/bin/eatf-verify.js`.
-- `test-vectors/valid/01-minimal-stub/` and
-  `test-vectors/invalid/01-tampered-record-stub/` manifest-only stub
-  vectors — superseded by real `.aep` files.
 
-## [0.1.0] — 2026-05-14
-
-Initial public release of the project scaffold.
+- **/pricing** route deleted entirely. `next.config.mjs` now permanently
+  redirects `/pricing` → `/about` so any old links land on the
+  institutional framing instead of a 404.
+- "Pricing" link removed from header, footer, and compliance "next steps"
+  cards. All EUR price quotes, sales-flavoured CTAs ("Talk to us",
+  "Request Regulated", "Contact partnerships"), and tier names
+  (Free / Starter / Growth / Scale / Regulated / Component) removed.
+- Public link to private GitHub repository removed from the footer trust
+  pills (replaced with a "Public release Q3 2026" placeholder); the
+  architecture page's `docs/architecture-diagram-source.md` link replaced
+  with a placeholder for the same reason.
 
 ### Added
-- Apache License 2.0.
-- `NOTICE` declaring the standards-relationship classification and
-  the project's positioning relative to eIDAS.
-- `README.md` with the "what EATF is / what EATF is NOT" framing.
-- `CONTRIBUTING.md` using the Developer Certificate of Origin (DCO);
-  no CLA.
-- `CODE_OF_CONDUCT.md` based on Contributor Covenant 2.1.
-- `SECURITY.md` with a coordinated-disclosure policy and a triage SLA.
-- Top-level directory layout: `docs/`, `schemas/`, `lib/`, `cli/`,
-  `examples/`, `test-vectors/`, `.github/`.
+
+- `docs/rebrand-notes.md` — summary of changes by page, list of TODO
+  markers added for the post-MTÜ-registration follow-up, and suggested
+  timeline for further updates.
 
 ### Notes
 
-This 0.1.0 release deliberately shipped specifications and
-scaffolding before runnable code. v0.1.1 replaces the lib/ and
-cli/eatf-verify/ scaffolding with the real implementation.
+- Tyche Institute MTÜ registration with the Estonian e-Business Register
+  is still in progress at the time of this commit. All copy referring to
+  the operator uses "(Estonian non-profit, registration in progress)" or
+  the equivalent. Source and content carry `TODO(tyche-mtu-registration)`
+  markers at every location that needs to be revisited after registration
+  completes — see `docs/rebrand-notes.md` for the inventory.
+- Operational deployments on `matx.ee`, `h2oatlas.ee`, `eaudit.ee`, and
+  `ai-act.eatf.eu` are out of scope for this PR; this cleanup is for the
+  `eatf.eu` site itself.
 
-[Unreleased]: https://github.com/tyche-institute/eatf/compare/v0.1.5...HEAD
-[0.1.5]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.5
-[0.1.4]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.4
-[0.1.3]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.3
-[0.1.2]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.2
-[0.1.1]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.1
-[0.1.0]: https://github.com/tyche-institute/eatf/releases/tag/v0.1.0
+---
+
+## [v0.4.0-phase4-complete] — 2026-04-04
+
+**Phase 4 (Policy & Coverage + Landing & Content) closed out.** Two full sprints delivered end-to-end; Phase 5 (Public API + SDKs) in progress.
+
+### Sprint 3 — Phase 5 APIs/SDKs (2026-03-15 → 2026-04-04) · 60% done
+
+Closed (3 of 5 sub-issues):
+
+- **Public API (OpenAPI 3.0) and For Developers page** — `#13` · stable OpenAPI 3.0 spec for `POST /api/ai/ask`, `GET /api/ai/verify/:id`, `GET /api/ai/evidence/:id`, `GET /api/ai/verifier`; quickstart published on "For Developers" landing.
+- **Sign-only API (`POST /api/sign`)** — `#14` · external systems can submit already-generated LLM responses for canonicalisation → hash → sign → (TSA) timestamp → persistence; integration-tested round-trip.
+- **Python SDK (sign / verify / get_evidence)** — `#15` · `aletheia.sign()`, `aletheia.verify()`, `aletheia.get_evidence()` with mocked-HTTP unit tests; publishable to PyPI.
+
+Rolled over to Sprint 4: `#16` (TypeScript SDK), parent `#51`.
+
+### Sprint 2 — Phase 4 Landing & Content (2026-02-22 → 2026-03-14) · 85% done
+
+Closed (6 of 7 sub-issues):
+
+- **Landing Hero + CTA** — `#7` · new Hero «ИИ это сказал. Но по каким правилам?» + "Проверить ответ — Демо" CTA, Phase-4 alignment.
+- **One scenario (HR or Legal)** — `#8` · 1–2 page scenario in `docs/en/scenarios/`, used as input for demo video.
+- **Demo video (3–5 min)** — `#9` · screencast: question → answer → verify → evidence → offline verifier; published to landing.
+- **Outreach to 10–20 companies** — `#11` · ≥10 emails sent, ≥3 discovery calls, ≥1 LOI collected.
+- **Basic analytics** — `#12` · landing visit counters, CTA clicks, demo usage, evidence downloads.
+- **Sprint 2 parent** — `#50` · closed with 85% DoD met.
+
+Rolled over to backlog: `#10` (Use Cases page — scope re-scoped).
+
+### Sprint 1 — Phase 4 Core: Policy & Coverage (2026-02-01 → 2026-02-21) · 100% done
+
+Closed (6 of 6 sub-issues):
+
+- **Demo-policy `aletheia-demo-2026-01`** — `#2` · canonical policy file + R1–R4 rule docs; default policy in dev profile.
+- **Policy coverage in backend** — `#3` · coverage = evaluated / total_rules, persisted in DB, surfaced via `/api/ai/verify/:id`.
+- **Policy coverage in Evidence Package** — `#4` · `.aep` now carries coverage + per-rule status (pass / not_evaluated).
+- **UI: Display policy coverage** — `#5` · coverage block on `/verify`, expandable rule list with statuses.
+- **UI: "Why confidence is not 100%?"** — `#6` · inline explanation of which checks passed / did not evaluate.
+- **Sprint 1 parent** — `#49` · closed with 100% DoD met.
+
+### Infrastructure & Process
+
+- **Co-authorship trail** — 81 of 310 main-branch commits in this release carry `Co-authored-by: H3nr1R <…>` trailers; 2-person team attribution is now traceable in `git log` and on GitHub's contributors graph.
+- **Branch protection** — `main` now requires PR + 1 approval + CODEOWNERS review + 4 required CI checks (Backend Tests (Java 21), Frontend Tests (Node.js 20), Python SDK Tests, All Checks Complete). Force-push and branch deletion disabled.
+- **CODEOWNERS + TEAM.md** — PR `#54` · routes review automatically; documents the 2-person team composition.
+- **Delivery board** — 23 issues + Status/Priority/Start-date/Target-date + labels on the maintainer's Projects v2 board.
+
+---
+
+## [Unreleased] — Sprint 4 (2026-04-05 → 2026-04-25) · in progress · 20% done
+
+**Phase 5 integrations sprint.** Target: `v0.5.0-phase5-integrations` by 2026-04-25.
+
+### In progress
+
+- `#17` — **MCP Attestation documentation and optional API extension** (docs + API surface)
+- `#20` — **Partner integration(s) — 1–2 partners** (contracts + reference implementation)
+- `#52` — Sprint 4 parent (tracking)
+
+### Closed so far
+
+- `#18` — **SIEM event export** (response_generated, response_signed, evidence_created emitted as structured events; webhook delivery documented in `docs/en/integrations/SIEM.md`)
+
+### To do
+
+- `#19` — **Blockchain anchoring** (document or implement)
+
+---
+
+## Backup safety net
+
+A snapshot of `main` immediately before the co-authorship rewrite is preserved on `origin/backup/pre-rewrite-2026-04-23` (SHA `caad2318`). The rewrite only added trailers; no content changes.
+
+---
+
+*Format: Sprint sections list closed sub-issues with a 1-sentence summary of user-visible or architectural impact. Infrastructure changes are collected separately per release.*
